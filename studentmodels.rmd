@@ -18,6 +18,10 @@ library(caret)
 library(car)
 library(pROC)
 library(readxl)
+library(pROC)
+library(readxl)
+library(glmnet)
+library(glmnetUtils)
 
 library(optimx)
 ```
@@ -25,12 +29,35 @@ library(optimx)
 
 ```{r}
 mydata <- read_excel("./fractions2013.xlsx")
-names(mydata)  
+names(mydata)
+
+
+
+
+Models_AIC <- rep(1,3);
+Models_BIC <- rep(1,3);
+ACCcv <- rep(1,3);
+NumParameters <- rep(1,3);
+Likelihood <- rep(1,3);
+BrierScore <- rep(1,3);
+names(Models_AIC)<-c("AFM", "PFM", "IFM")
+names(Models_BIC)<-c("AFM", "PFM", "IFM")
+names(ACCcv)<-c("AFM", "PFM", "IFM")
+names(NumParameters)<-c("AFM", "PFM", "IFM")
+names(Likelihood)<-c("AFM", "PFM", "IFM")
+names(BrierScore)=c("AFM","PFM","IFM")
+
+
+RMSElmer <- rep(1,3);
+RMSElmer<-c("AFM","PFM","IFM")
+
 ```
 
 
 
 ```{r}
+## Prepare Data
+
 mydata$`First Attempt` = revalue(mydata$`First Attempt`, c("incorrect"= 0))
 mydata$`First Attempt` = revalue(mydata$`First Attempt`, c("hint"= 0))
 mydata$`First Attempt` = revalue(mydata$`First Attempt`, c("correct"= 1))
@@ -43,116 +70,281 @@ mydata <- na.omit(mydata)
 
 
 ```{r}
- mydata["KCModel"] = mydata$`KC (Default)`
-  mydata["OpportunityModel"] = as.numeric(as.character(mydata$`Opportunity`))
+
+
+mydata["KCModel"] = mydata$`KC (Default)`
+mydata["OpportunityModel"] = as.numeric(as.character(mydata$`Opportunity`))
   
-  
-  #Instead of Opportunities we need the number of correct and incorrect answers for PFM
+
 mydata["CorrectModel"] = as.numeric(as.character(mydata$`Corrects`))
 mydata["IncorrectModel"] = as.numeric(as.character(mydata$`Incorrects`))
 
-#For IFM we additionally need the number of tells
 mydata["TellsModel"] = as.numeric(as.character(mydata$`Hints`))
   
 ```
 
 
+
 ```{r}
+
 AFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:OpportunityModel
- AFMTrainingModel <- glm(AFM_form, family=binomial(), data= mydata); 
-summary(AFMTrainingModel)
- 
- summary(AFMTrainingModel)$aic	
+AFMTrainingModel <- glm(AFM_form, family=binomial(), data= mydata); 
 
- 
- #This is the formula for the PFM model
-#Instead of the opportunities model I put the models for the correct and incorrect answers here
+
 PFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:(CorrectModel + IncorrectModel)
- PFMTrainingModel <- glm(PFM_form, family=binomial(), data= mydata); 
-print('---------------------- PFM model ---------------------------')
-summary(PFMTrainingModel)
- 
- summary(PFMTrainingModel)$aic	
+PFMTrainingModel <- glm(PFM_form, family=binomial(), data= mydata); 
 
-#This is the formula for the IFM model
-#Instead of the opportunities model I put the models for the correct and incorrect answers as well as the number of tells here
+
 IFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:(CorrectModel + IncorrectModel + TellsModel)
- IFMTrainingModel <- glm(IFM_form, family=binomial(), data= mydata); 
-print('---------------------- IFM model ---------------------------')
-summary(IFMTrainingModel)
- 
- summary(IFMTrainingModel)$aic
- 
- 
-  
+IFMTrainingModel <- glm(IFM_form, family=binomial(), data= mydata); 
+
 ```
 
 
 ```{r}
-#when you execture that code at home, select as many entries as the combination of day and month of birthday.
-#for example, if your birthday is on 12th of July, you can choose, 127 entries
-i= sample.int(nrow(mydata), 127)
+####################################
+# Create training and testing using Pareto Principle
+# 
+# cols = ncol(mydata)
+# sample_size = floor(0.8 *nrow(mydata))
+# set.seed(123)
+#   
+# train_ind <- sample(seq_len(nrow(mydata)), size = sample_size)
+# traindata <- mydata[train_ind, ]
+# testdata <- mydata[-train_ind, ]
+# 
+# 
+# AFMTrainingTestModel <- glm(AFM_form, family=binomial(), data= traindata); 
+# 
+# PFMTrainingTestModel <- glm(PFM_form, family=binomial(), data= traindata); 
+# 
+# IFMTrainingTestModel <- glm(IFM_form, family=binomial(), data= traindata); 
+# 
+# 
+# afmprobabilities <- AFMTrainingTestModel %>% predict(testdata, type = "response")
+# afmpredicted_value <- ifelse(afmprobabilities >0.5,1,0)  
+# afmconfusion_mat = as.matrix(table(Actual_Values = testdata$Outcome, Predicted_Values = afmpredicted_value)) 
+# 
+# pfmprobabilities <- PFMTrainingTestModel %>% predict(testdata, type = "response")
+# pfmpredicted_value <- ifelse(pfmprobabilities >0.5,1,0)  
+# pfmconfusion_mat = as.matrix(table(Actual_Values = testdata$Outcome, Predicted_Values = pfmpredicted_value)) 
+# 
+# ifmprobabilities <- IFMTrainingTestModel %>% predict(testdata, type = "response")
+# ifmpredicted_value <- ifelse(ifmprobabilities >0.5,1,0)  
+# ifmconfusion_mat = as.matrix(table(Actual_Values = testdata$Outcome, Predicted_Values = ifmpredicted_value)) 
+```
 
-TrainingDataTemp  <- mydata[-i,];
-TestingDataTemp  <- mydata[i,];
+
+```{r}
+####################################
+# Here are the 10-fold cross validiation for the models.
+#####################################
+  
+
+cvafm = CVbinary(AFMTrainingModel);
+ACCcv["AFM"] <- cvafm$acc.cv
 
 
-#retrain model
+cvpfm = CVbinary(PFMTrainingModel);
+ACCcv["PFM"] <- cvpfm$acc.cv
 
-AFMTrainingModel <- glm(AFM_form, family=binomial(), data= TrainingDataTemp); 
+cvifm = CVbinary(IFMTrainingModel);
+ACCcv["IFM"] <- cvafm$acc.cv
 
-#predict for testset
-probabilities <- AFMTrainingModel %>% predict(TestingDataTemp, type = "response")
-head(probabilities)
 
-#lets say that we set the classification threshold to 0.5
-# probability >0.5 means the student will answer correctly
-# probability <0.5 means the student will answer incorrectly
+```
 
-TestingDataTemp$prediction <- ifelse(probabilities >0.5,1,0)
+
+```{r}
+# Create training and testing using Pareto Principle
+
+cols = ncol(mydata)
+sample_size = floor(0.8 *nrow(mydata))
+set.seed(123)
+   
+train_ind <- sample(seq_len(nrow(mydata)), size = sample_size)
+traindata <- mydata[train_ind, ]
+testdata <- mydata[-train_ind, ]
+
+AFMTrainingTestModel <- glm(AFM_form, family=binomial(), data= traindata); 
+PFMTrainingTestModel <- glm(PFM_form, family=binomial(), data= traindata); 
+IFMTrainingTestModel <- glm(IFM_form, family=binomial(), data= traindata); 
+
+afmProbabilities <- AFMTrainingTestModel %>% predict(testdata, type = "response")
+
+testdata$afmprediction <- ifelse(afmProbabilities >0.5,1,0)
 
 #Check the error between real outcomes and predicted variables 
-sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$prediction)^2))
+sqrt(mean((testdata$Outcome - testdata$afmprediction)^2))
 
 
-#Training and test set can be the same for PFM and IFM
-i= sample.int(nrow(mydata), 3112)
 
-TrainingDataTemp  <- mydata[-i,];
-TestingDataTemp  <- mydata[i,];
+pfmProbabilities <- PFMTrainingTestModel %>% predict(testdata, type = "response")
 
 
-#retrain both models
-
-PFMTrainingModel <- glm(PFM_form, family=binomial(), data= TrainingDataTemp); 
-IFMTrainingModel <- glm(IFM_form, family=binomial(), data= TrainingDataTemp); 
-
-
-#Predictions and classification for PFM
-pfmProbabilities <- PFMTrainingModel %>% predict(TestingDataTemp, type = "response")
-print('---------------------- PFM results ---------------------------')
-head(pfmProbabilities)
-
-#lets say that we set the classification threshold to 0.5
-# probability >0.5 means the student will answer correctly
-# probability <0.5 means the student will answer incorrectly
-TestingDataTemp$pfmPrediction <- ifelse(pfmProbabilities >0.5,1,0)
+testdata$pfmprediction <- ifelse(pfmProbabilities >0.5,1,0)
 
 #Check the error between real outcomes and predicted variables 
-sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$pfmPrediction)^2))
+sqrt(mean((testdata$Outcome - testdata$pfmprediction)^2))
 
 
-#Predictions and classification for IFM
-ifmProbabilities <- IFMTrainingModel %>% predict(TestingDataTemp, type = "response")
-print('---------------------- IFM results ---------------------------')
-head(ifmProbabilities)
 
-#lets say that we set the classification threshold to 0.5
-# probability >0.5 means the student will answer correctly
-# probability <0.5 means the student will answer incorrectly
-TestingDataTemp$ifmPrediction <- ifelse(ifmProbabilities >0.5,1,0)
+ifmProbabilities <- IFMTrainingTestModel %>% predict(testdata, type = "response")
+
+testdata$ifmprediction <- ifelse(ifmProbabilities >0.5,1,0)
 
 #Check the error between real outcomes and predicted variables 
-sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$ifmPrediction)^2))
+sqrt(mean((testdata$Outcome - testdata$ifmprediction)^2))
 
+```
+
+
+
+
+```{r}
+
+N<-nrow(mydata)
+Models_AIC["AFM"]<-summary(AFMTrainingModel)$aic	
+Models_BIC["AFM"]<-summary(AFMTrainingModel)$aic+length(coef(AFMTrainingModel))*(log(N)-2);
+
+
+Models_AIC["PFM"]<-summary(PFMTrainingModel)$aic	
+Models_BIC["PFM"]<-summary(PFMTrainingModel)$aic+length(coef(PFMTrainingModel))*(log(N)-2);
+
+Models_AIC["IFM"]<-summary(IFMTrainingModel)$aic	
+Models_BIC["IFM"]<-summary(IFMTrainingModel)$aic+length(coef(IFMTrainingModel))*(log(N)-2);
+
+
+NumParameters["AFM"] <- length(coef(AFMTrainingModel))
+NumParameters["PFM"] <- length(coef(PFMTrainingModel))
+NumParameters["IFM"] <- length(coef(IFMTrainingModel))
+  
+Likelihood["AFM"] <- -summary(AFMTrainingModel)$deviance/2
+Likelihood["PFM"] <- -summary(PFMTrainingModel)$deviance/2
+Likelihood["IFM"] <- -summary(IFMTrainingModel)$deviance/2
+
+
+afmpred.prob <- predict(AFMTrainingModel,type='response')
+pfmpred.prob <- predict(PFMTrainingModel,type='response')
+ifmpred.prob <- predict(IFMTrainingModel,type='response')
+
+BrierScore["AFM"] <- mean((afmpred.prob-mydata$Outcome)^2)
+BrierScore["PFM"] <- mean((pfmpred.prob-mydata$Outcome)^2)
+BrierScore["IFM"] <- mean((ifmpred.prob-mydata$Outcome)^2)
+
+
+
+print(Models_AIC)
+print(Models_BIC)
+print(NumParameters)
+print(Likelihood)
+print(BrierScore)
+
+
+```
+
+
+```{r}
+summary(AFMTrainingModel)
+summary(PFMTrainingModel)
+summary(IFMTrainingModel)
+```
+
+```{r}
+####################################################################################################
+  ####################################################################################################
+  # Then we run leave-one-student-at-one-time cross validation by using lmer 
+  # on all models
+  # The output of average RMSE is stored
+  ####################################################################################################
+  ####################################################################################################
+
+
+
+  
+  students <-unique(mydata$`AnonStudentId`)
+length(students)
+  testing = students[1:(length(students)%/%3)]
+  testing
+  tester = subset(mydata,mydata$`AnonStudentId` %in% testing)
+  
+  students <-unique(tester$AnonStudentId)
+  #lmerAFM_RMSE=rep(1,length(students));
+  #lmerAFMLT_RMSE=rep(1,length(students));
+  #lmerAFMQT_RMSE=rep(1,length(students));
+  lmerAFM_RMSE=rep(1,length(tester));
+  lmerPFM_RMSE=rep(1,length(tester));
+  lmerIFM_RMSE=rep(1,length(tester));
+  
+  
+  i=1
+  print(length(students))
+  
+ 
+  for (stu in students){
+    stu = students[i]
+    print(i)
+    print(stu)
+    TrainingDataTemp  <- subset(tester, AnonStudentId != stu);
+    TestingDataTemp  <- subset(tester, AnonStudentId == stu);
+    #for AFM
+    tryCatch({
+      afmlmer <- glmer(Outcome ~ (1|AnonStudentId) + KCModel + KCModel:OpportunityModel, data=TrainingDataTemp, family=binomial(), control = glmerControl(optimizer = "optimx", calc.derivs = FALSE,optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)))  
+      lmerAFM_mm = model.matrix(terms(afmlmer),TestingDataTemp);
+      tryCatch({
+        TestingDataTemp$Correct_lmerAFMPredict = 1/(1+ exp(-(lmerAFM_mm %*% fixef(afmlmer))))
+        lmerAFM_RMSE[i] = sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$Correct_lmerAFMPredict)^2))
+        print(lmerAFM_RMSE[i])
+        
+      }, 
+      lmerAFM_RMSE[i] <- NA,
+      error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+    }, 
+    lmerAFM_RMSE[i] <- NA,
+    error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+    
+  
+    
+    #for PFM
+     tryCatch({
+       pfmlmer <- glmer(Outcome ~ (1|AnonStudentId) + KCModel + KCModel:(CorrectModel+IncorrectModel), data=TrainingDataTemp, family=binomial(), control = glmerControl(optimizer = "optimx", calc.derivs = FALSE,optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)))  
+       lmerPFM_mm = model.matrix(terms(pfmlmer),TestingDataTemp);
+       tryCatch({
+         TestingDataTemp$Correct_lmerPFMPredict = 1/(1+ exp(-(lmerPFM_mm %*% fixef(pfmlmer))))
+         lmerPFM_RMSE[i] = sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$Correct_lmerPFMPredict)^2))
+       }, 
+       lmerPFM_RMSE[i] <- NA,
+       error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+     }, 
+     lmerPFM_RMSE[i] <- NA,
+     error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+   
+   
+   tryCatch({
+       ifmlmer <- glmer(Outcome ~ (1|AnonStudentId) + KCModel + KCModel:(CorrectModel+IncorrectModel+TellsModel), data=TrainingDataTemp, family=binomial(), control = glmerControl(optimizer = "optimx", calc.derivs = FALSE,optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)))  
+       lmerIFM_mm = model.matrix(terms(ifmlmer),TestingDataTemp);
+       tryCatch({
+         TestingDataTemp$Correct_lmerIFMPredict = 1/(1+ exp(-(lmerIFM_mm %*% fixef(ifmlmer))))
+         lmerIFM_RMSE[i] = sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$Correct_lmerIFMPredict)^2))
+         
+         
+       }, 
+       lmerAFM_RMSE[i] <- NA,
+       error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+     }, 
+     lmerAFM_RMSE[i] <- NA,
+     error = function(e){cat("ERROR :",conditionMessage(e), "\n")})}
+   
+  
+    
+  
+  lmerAFM_RMSE = na.omit(lmerAFM_RMSE)
+  lmerPFM_RMSE = na.omit(lmerPFM_RMSE)
+  lmerIFM_RMSE = na.omit(lmerIFM_RMSE)
+  RMSElmer["AFM"]=mean(lmerAFM_RMSE)
+  RMSElmer["PFM"]=mean(lmerPFM_RMSE)
+  RMSElmer["IFM"]=mean(lmerIFM_RMSE)
+  
+
+  print(RMSElmer)
 ```
