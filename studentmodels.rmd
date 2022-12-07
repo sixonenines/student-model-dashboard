@@ -1,0 +1,158 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(boot)
+library(DAAG)
+library(lme4)
+
+library(tidyverse)
+library(caret)
+
+
+library(plyr)
+library(caret)
+library(car)
+library(pROC)
+library(readxl)
+
+library(optimx)
+```
+
+
+```{r}
+mydata <- read_excel("./fractions2013.xlsx")
+names(mydata)  
+```
+
+
+
+```{r}
+mydata$`First Attempt` = revalue(mydata$`First Attempt`, c("incorrect"= 0))
+mydata$`First Attempt` = revalue(mydata$`First Attempt`, c("hint"= 0))
+mydata$`First Attempt` = revalue(mydata$`First Attempt`, c("correct"= 1))
+  
+mydata["Outcome"] = as.numeric(mydata$`First Attempt`)
+
+mydata <- na.omit(mydata)
+  
+```
+
+
+```{r}
+ mydata["KCModel"] = mydata$`KC (Default)`
+  mydata["OpportunityModel"] = as.numeric(as.character(mydata$`Opportunity`))
+  
+  
+  #Instead of Opportunities we need the number of correct and incorrect answers for PFM
+mydata["CorrectModel"] = as.numeric(as.character(mydata$`Corrects`))
+mydata["IncorrectModel"] = as.numeric(as.character(mydata$`Incorrects`))
+
+#For IFM we additionally need the number of tells
+mydata["TellsModel"] = as.numeric(as.character(mydata$`Hints`))
+  
+```
+
+
+```{r}
+AFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:OpportunityModel
+ AFMTrainingModel <- glm(AFM_form, family=binomial(), data= mydata); 
+summary(AFMTrainingModel)
+ 
+ summary(AFMTrainingModel)$aic	
+
+ 
+ #This is the formula for the PFM model
+#Instead of the opportunities model I put the models for the correct and incorrect answers here
+PFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:(CorrectModel + IncorrectModel)
+ PFMTrainingModel <- glm(PFM_form, family=binomial(), data= mydata); 
+print('---------------------- PFM model ---------------------------')
+summary(PFMTrainingModel)
+ 
+ summary(PFMTrainingModel)$aic	
+
+#This is the formula for the IFM model
+#Instead of the opportunities model I put the models for the correct and incorrect answers as well as the number of tells here
+IFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:(CorrectModel + IncorrectModel + TellsModel)
+ IFMTrainingModel <- glm(IFM_form, family=binomial(), data= mydata); 
+print('---------------------- IFM model ---------------------------')
+summary(IFMTrainingModel)
+ 
+ summary(IFMTrainingModel)$aic
+ 
+ 
+  
+```
+
+
+```{r}
+#when you execture that code at home, select as many entries as the combination of day and month of birthday.
+#for example, if your birthday is on 12th of July, you can choose, 127 entries
+i= sample.int(nrow(mydata), 127)
+
+TrainingDataTemp  <- mydata[-i,];
+TestingDataTemp  <- mydata[i,];
+
+
+#retrain model
+
+AFMTrainingModel <- glm(AFM_form, family=binomial(), data= TrainingDataTemp); 
+
+#predict for testset
+probabilities <- AFMTrainingModel %>% predict(TestingDataTemp, type = "response")
+head(probabilities)
+
+#lets say that we set the classification threshold to 0.5
+# probability >0.5 means the student will answer correctly
+# probability <0.5 means the student will answer incorrectly
+
+TestingDataTemp$prediction <- ifelse(probabilities >0.5,1,0)
+
+#Check the error between real outcomes and predicted variables 
+sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$prediction)^2))
+
+
+#Training and test set can be the same for PFM and IFM
+i= sample.int(nrow(mydata), 3112)
+
+TrainingDataTemp  <- mydata[-i,];
+TestingDataTemp  <- mydata[i,];
+
+
+#retrain both models
+
+PFMTrainingModel <- glm(PFM_form, family=binomial(), data= TrainingDataTemp); 
+IFMTrainingModel <- glm(IFM_form, family=binomial(), data= TrainingDataTemp); 
+
+
+#Predictions and classification for PFM
+pfmProbabilities <- PFMTrainingModel %>% predict(TestingDataTemp, type = "response")
+print('---------------------- PFM results ---------------------------')
+head(pfmProbabilities)
+
+#lets say that we set the classification threshold to 0.5
+# probability >0.5 means the student will answer correctly
+# probability <0.5 means the student will answer incorrectly
+TestingDataTemp$pfmPrediction <- ifelse(pfmProbabilities >0.5,1,0)
+
+#Check the error between real outcomes and predicted variables 
+sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$pfmPrediction)^2))
+
+
+#Predictions and classification for IFM
+ifmProbabilities <- IFMTrainingModel %>% predict(TestingDataTemp, type = "response")
+print('---------------------- IFM results ---------------------------')
+head(ifmProbabilities)
+
+#lets say that we set the classification threshold to 0.5
+# probability >0.5 means the student will answer correctly
+# probability <0.5 means the student will answer incorrectly
+TestingDataTemp$ifmPrediction <- ifelse(ifmProbabilities >0.5,1,0)
+
+#Check the error between real outcomes and predicted variables 
+sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$ifmPrediction)^2))
+
+```
