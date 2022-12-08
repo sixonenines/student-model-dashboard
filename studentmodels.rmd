@@ -298,42 +298,44 @@ length(students)
         
       }, 
       lmerAFM_RMSE[i] <- NA,
-      error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+      error = function(e){cat("AFM ERROR :",conditionMessage(e), "\n")})
     }, 
     lmerAFM_RMSE[i] <- NA,
-    error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+    error = function(e){cat("AFM ERROR :",conditionMessage(e), "\n")})
     
   
     
     #for PFM
      tryCatch({
-       pfmlmer <- glmer(Outcome ~ (1|AnonStudentId) + KCModel + KCModel:(CorrectModel+IncorrectModel), data=TrainingDataTemp, family=binomial(), control = glmerControl(optimizer = "optimx", calc.derivs = FALSE,optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)))  
+       pfmlmer <- glmer(Outcome ~ (1|AnonStudentId) + KCModel + KCModel:(CorrectModel+IncorrectModel), data=TrainingDataTemp, family=binomial(logit))  
        lmerPFM_mm = model.matrix(terms(pfmlmer),TestingDataTemp);
        tryCatch({
          TestingDataTemp$Correct_lmerPFMPredict = 1/(1+ exp(-(lmerPFM_mm %*% fixef(pfmlmer))))
          lmerPFM_RMSE[i] = sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$Correct_lmerPFMPredict)^2))
+         print("PFM")
+         print(lmerPFM_RMSE[i])
        }, 
        lmerPFM_RMSE[i] <- NA,
-       error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+       error = function(e){cat("PFM ERROR :",conditionMessage(e), "\n")})
      }, 
      lmerPFM_RMSE[i] <- NA,
-     error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+     error = function(e){cat("PFM ERROR :",conditionMessage(e), "\n")})
    
    
    tryCatch({
-       ifmlmer <- glmer(Outcome ~ (1|AnonStudentId) + KCModel + KCModel:(CorrectModel+IncorrectModel+TellsModel), data=TrainingDataTemp, family=binomial(), control = glmerControl(optimizer = "optimx", calc.derivs = FALSE,optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)))  
+       ifmlmer <- glmer(Outcome ~ (1|AnonStudentId) + KCModel + KCModel:(CorrectModel+IncorrectModel+TellsModel), data=TrainingDataTemp, family=binomial(logit))
        lmerIFM_mm = model.matrix(terms(ifmlmer),TestingDataTemp);
        tryCatch({
          TestingDataTemp$Correct_lmerIFMPredict = 1/(1+ exp(-(lmerIFM_mm %*% fixef(ifmlmer))))
          lmerIFM_RMSE[i] = sqrt(mean((TestingDataTemp$Outcome - TestingDataTemp$Correct_lmerIFMPredict)^2))
-         
-         
+         print("IFM")
+         print(lmerIFM_RMSE[i])
        }, 
-       lmerAFM_RMSE[i] <- NA,
-       error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
+       lmerIFM_RMSE[i] <- NA,
+       error = function(e){cat("IFM ERROR :",conditionMessage(e), "\n")})
      }, 
-     lmerAFM_RMSE[i] <- NA,
-     error = function(e){cat("ERROR :",conditionMessage(e), "\n")})}
+     lmerIFM_RMSE[i] <- NA,
+     error = function(e){cat("IFM ERROR :",conditionMessage(e), "\n")})}
    
   
     
