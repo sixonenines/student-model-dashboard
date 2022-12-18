@@ -32,7 +32,7 @@ mydata <- read_excel("./fractions2013.xlsx")
 names(mydata)
 
 
-
+Model_type=c("AFM","PFM","IFM")
 
 Models_AIC <- rep(1,3);
 Models_BIC <- rep(1,3);
@@ -40,6 +40,8 @@ ACCcv <- rep(1,3);
 NumParameters <- rep(1,3);
 Likelihood <- rep(1,3);
 BrierScore <- rep(1,3);
+LogLoss <- rep(1,3);
+names(LogLoss)<- c("AFM","PFM","IFM")
 names(Models_AIC)<-c("AFM", "PFM", "IFM")
 names(Models_BIC)<-c("AFM", "PFM", "IFM")
 names(ACCcv)<-c("AFM", "PFM", "IFM")
@@ -48,8 +50,11 @@ names(Likelihood)<-c("AFM", "PFM", "IFM")
 names(BrierScore)=c("AFM","PFM","IFM")
 
 
-RMSElmer <- rep(1,3);
-RMSElmer<-c("AFM","PFM","IFM")
+AICc <- rep(1,3);
+names(AICc) <- c("AFM","PFM","IFM")
+
+RMSE <- rep(1,3);
+names(RMSE)<-c("AFM","PFM","IFM")
 
 ```
 
@@ -149,7 +154,7 @@ cvpfm = CVbinary(PFMTrainingModel);
 ACCcv["PFM"] <- cvpfm$acc.cv
 
 cvifm = CVbinary(IFMTrainingModel);
-ACCcv["IFM"] <- cvafm$acc.cv
+ACCcv["IFM"] <- cvifm$acc.cv
 
 
 ```
@@ -175,7 +180,7 @@ afmProbabilities <- AFMTrainingTestModel %>% predict(testdata, type = "response"
 testdata$afmprediction <- ifelse(afmProbabilities >0.5,1,0)
 
 #Check the error between real outcomes and predicted variables 
-sqrt(mean((testdata$Outcome - testdata$afmprediction)^2))
+RMSE["AFM"]<-sqrt(mean((testdata$Outcome - testdata$afmprediction)^2))
 
 
 
@@ -185,7 +190,7 @@ pfmProbabilities <- PFMTrainingTestModel %>% predict(testdata, type = "response"
 testdata$pfmprediction <- ifelse(pfmProbabilities >0.5,1,0)
 
 #Check the error between real outcomes and predicted variables 
-sqrt(mean((testdata$Outcome - testdata$pfmprediction)^2))
+RMSE["PFM"]<-sqrt(mean((testdata$Outcome - testdata$pfmprediction)^2))
 
 
 
@@ -194,7 +199,7 @@ ifmProbabilities <- IFMTrainingTestModel %>% predict(testdata, type = "response"
 testdata$ifmprediction <- ifelse(ifmProbabilities >0.5,1,0)
 
 #Check the error between real outcomes and predicted variables 
-sqrt(mean((testdata$Outcome - testdata$ifmprediction)^2))
+RMSE["IFM"]<-sqrt(mean((testdata$Outcome - testdata$ifmprediction)^2))
 
 ```
 
@@ -233,16 +238,44 @@ BrierScore["PFM"] <- mean((pfmpred.prob-mydata$Outcome)^2)
 BrierScore["IFM"] <- mean((ifmpred.prob-mydata$Outcome)^2)
 
 
+AICc["AFM"] <- -2*(Likelihood["AFM"])+2*NumParameters["AFM"]+(2*NumParameters["AFM"]*(NumParameters["AFM"]+1)/(N-NumParameters["AFM"]-1))
+
+AICc["PFM"] <- -2*(Likelihood["PFM"])+2*NumParameters["PFM"]+(2*NumParameters["PFM"]*(NumParameters["PFM"]+1)/(N-NumParameters["PFM"]-1))
+
+
+AICc["IFM"] <- -2*(Likelihood["IFM"])+2*NumParameters["IFM"]+(2*NumParameters["IFM"]*(NumParameters["IFM"]+1)/(N-NumParameters["IFM"]-1))
+
+
+
+
+logLoss <- function(pred, actual){
+  -mean(actual * log(pred) + (1 - actual) * log(1 - pred))}
+
+
+
+
+LogLoss["AFM"] <- logLoss(pred = afmpred.prob,actual = mydata$Outcome)
+LogLoss["PFM"] <- logLoss(pred = pfmpred.prob,actual = mydata$Outcome)
+LogLoss["IFM"] <- logLoss(pred = ifmpred.prob,actual = mydata$Outcome)
+
+
 
 print(Models_AIC)
 print(Models_BIC)
 print(NumParameters)
 print(Likelihood)
 print(BrierScore)
+print(LogLoss)
 
 
 ```
+```{r}
 
+exportdf <- cbind(Model_type,Models_AIC,AICc,Models_BIC,NumParameters,Likelihood,BrierScore,LogLoss,RMSE,ACCcv)
+
+
+write.csv(exportdf, "./R_results.csv", row.names=FALSE)
+```
 
 ```{r}
 summary(AFMTrainingModel)
@@ -354,3 +387,9 @@ summary(IFMTrainingModel)
 # 
 #   print(RMSElmer)
 # ```
+```
+
+
+
+
+
