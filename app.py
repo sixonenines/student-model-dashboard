@@ -58,7 +58,8 @@ if uploaded_file is not None:
         pystats=[]
         rstats=[]
         uniqueid=str(uuid.uuid4())
-        writer = pd.ExcelWriter(f'./data/{uniqueid}.xlsx', engine='xlsxwriter')
+        #writer = pd.ExcelWriter(f'./data/{uniqueid}.xlsx', engine='xlsxwriter')
+        writer = pd.ExcelWriter(f'./{uniqueid}.xlsx', engine='xlsxwriter')
         df.to_excel(writer,sheet_name="data")
         writer.save()
         tab1, tab2 = st.tabs(["Python", "R"])
@@ -89,11 +90,14 @@ if uploaded_file is not None:
             for modeltype in selectedModels:
                 st.subheader(f"{modeltype}")
                 if modeltype=="AFM":
-                    process = subprocess.run(["Rscript","AFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                    #process = subprocess.run(["Rscript","AFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                    process = subprocess.run(["Rscript","AFM_Script.R"] + [f'./{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                 elif modeltype=="PFM":
-                    process = subprocess.run(["Rscript","PFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                    #process = subprocess.run(["Rscript","PFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                    process = subprocess.run(["Rscript","PFM_Script.R"] + [f'./{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                 elif modeltype=="IFM":
-                    process = subprocess.run(["Rscript","IFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)            
+                    #process = subprocess.run(["Rscript","IFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True
+                    process = subprocess.run(["Rscript","IFM_Script.R"] + [f'./{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)            
                 paths=process.stdout
                 pathlist=paths.rsplit(sep="!")
                 stats=pd.read_csv(pathlist[0])

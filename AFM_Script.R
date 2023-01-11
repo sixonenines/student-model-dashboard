@@ -23,9 +23,9 @@ cmdargs <- commandArgs(trailingOnly=TRUE)
 
 inputfilelocation <- cmdargs[1]
 val= cmdargs[2]
-outputfilelocation <- paste("./output/AFM_Rstats_",val,".csv",sep="")
-coefficientfilelocation <- paste("./output/AFM_Rcoef_",val,".csv",sep="")
-predictionfilepath <- paste("./output/AFM_Pred_",val,".csv",sep="")
+outputfilelocation <- paste("./AFM_Rstats_",val,".csv",sep="")
+coefficientfilelocation <- paste("./AFM_Rcoef_",val,".csv",sep="")
+predictionfilepath <- paste("./AFM_Pred_",val,".csv",sep="")
 
 #write("print", stdout())
 #write(filelocation, stdout())
