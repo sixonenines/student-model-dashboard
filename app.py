@@ -89,6 +89,7 @@ if uploaded_file is not None:
             st.header("R Implementation")
             for modeltype in selectedModels:
                 st.subheader(f"{modeltype}")
+                process = subprocess.run(["Rscript","AFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                 if modeltype=="AFM":
                     process = subprocess.run(["Rscript","AFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                     #process = subprocess.run(["Rscript","AFM_Script.R"] + [f'./{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
