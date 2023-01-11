@@ -4,3 +4,4 @@ patsy==0.5.2
 numpy==1.21.5
 matplotlib==3.5.2
 streamlit-ext==0.1.5
+openpyxl==3.0.10
