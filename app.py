@@ -58,7 +58,8 @@ if uploaded_file is not None:
         pystats=[]
         rstats=[]
         uniqueid=str(uuid.uuid4())
-        writer = pd.ExcelWriter(f'./data/{uniqueid}.xlsx', engine='xlsxwriter')
+        #writer = pd.ExcelWriter(f'./data/{uniqueid}.xlsx', engine='xlsxwriter')
+        writer = pd.ExcelWriter(f'./{uniqueid}.xlsx', engine='xlsxwriter')
         df.to_excel(writer,sheet_name="data")
         writer.save()
         tab1, tab2 = st.tabs(["Python", "R"])
