@@ -61,8 +61,7 @@ if uploaded_file is not None:
         writer = pd.ExcelWriter(f'./data/{uniqueid}.xlsx', engine='xlsxwriter')
         df.to_excel(writer,sheet_name="data")
         writer.save()
-        read=pd.read_excel(f'./data/{uniqueid}.xlsx')
-        read
+
         tab1, tab2 = st.tabs(["Python", "R"])
         with tab1:
             df=feature_engineering(df)
@@ -104,7 +103,8 @@ if uploaded_file is not None:
                     #process = subprocess.run(["Rscript","IFM_Script.R"] + [f'./{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)            
                 paths=process.stdout
                 pathlist=paths.rsplit(sep="!")
-                stats=pd.read_csv(pathlist[0])
+                stats=pd.read_excel(pathlist[0])
+                #stats=pd.read_csv(pathlist[0])
                 stats
                 rstats.append(stats)
                 coef=pd.read_csv(pathlist[1])

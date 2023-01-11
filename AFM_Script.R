@@ -1,3 +1,13 @@
+cmdargs <- commandArgs(trailingOnly=TRUE)
+
+
+inputfilelocation <- cmdargs[1]
+val= cmdargs[2]
+
+cat(inputfilelocation)
+cat("!")
+
+
 library(boot);
 #library(DAAG);
 library(lme4);
