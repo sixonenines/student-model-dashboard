@@ -96,7 +96,7 @@ if uploaded_file is not None:
                     process = subprocess.run(["Rscript","PFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                     #process = subprocess.run(["Rscript","PFM_Script.R"] + [f'./{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                 elif modeltype=="IFM":
-                    process = subprocess.run(["Rscript","IFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True
+                    process = subprocess.run(["Rscript","IFM_Script.R"] + [f'./data/{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                     #process = subprocess.run(["Rscript","IFM_Script.R"] + [f'./{uniqueid}.xlsx',uniqueid], stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)            
                 paths=process.stdout
                 pathlist=paths.rsplit(sep="!")
