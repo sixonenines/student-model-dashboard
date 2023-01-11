@@ -24,10 +24,12 @@ library(glmnet)
 library(glmnetUtils)
 
 library(optimx)
+library(arrow)
 ```
 
 
 ```{r}
+testtest <- commandArgs()
 mydata <- read_excel("./fractions2013.xlsx")
 names(mydata)
 
@@ -201,6 +203,14 @@ testdata$ifmprediction <- ifelse(ifmProbabilities >0.5,1,0)
 #Check the error between real outcomes and predicted variables 
 RMSE["IFM"]<-sqrt(mean((testdata$Outcome - testdata$ifmprediction)^2))
 
+confusion_matrix=table(ACTUAL=testdata$Outcome,PREDICTED=testdata$ifmprediction)
+TN=confusion_matrix[1,1]
+FP=confusion_matrix[1,2]
+FN=confusion_matrix[2,1]
+TP=confusion_matrix[2,2]
+Precision=TP/ (TP+FP)
+Recall= TP/ (TP+FN)
+F1 = (2*(Precision*Recall)) / (Precision+Recall)
 ```
 
 

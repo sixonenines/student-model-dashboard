@@ -62,6 +62,8 @@ if uploaded_file is not None:
         #writer = pd.ExcelWriter(f'./{uniqueid}.xlsx', engine='xlsxwriter')
         df.to_excel(writer,sheet_name="data")
         writer.save()
+        read=pd.read_csv(f'./data/{uniqueid}.xlsx')
+        read
         tab1, tab2 = st.tabs(["Python", "R"])
         with tab1:
             df=feature_engineering(df)
