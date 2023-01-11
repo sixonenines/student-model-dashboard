@@ -97,7 +97,6 @@ r-cran-proxy
 r-cran-ps
 r-cran-purrr
 r-cran-quantreg
-r-cran-R6
 r-cran-rappdirs
 r-cran-rbibutils
 r-cran-readr
@@ -109,7 +108,6 @@ r-cran-reprex
 r-cran-reshape2
 r-cran-rlang
 r-cran-rmarkdown
-r-cran-ROCR
 r-cran-rprojroot
 r-cran-rstudioapi
 r-cran-rvest
@@ -125,7 +123,6 @@ r-cran-tibble
 r-cran-tidyr
 r-cran-tidyselect
 r-cran-tidyverse
-r-cran-timeDate
 r-cran-tinytex
 r-cran-utf8
 r-cran-uuid
