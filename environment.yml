@@ -1,9 +1,0 @@
-name: stats
-dependencies:
-  - scikit-learn
-  - pandas
-  - patsy
-  - numpy
-  - matplotlib
-  - openpyxl
-  - r-daag
