@@ -1,13 +1,3 @@
-cmdargs <- commandArgs(trailingOnly=TRUE)
-
-
-inputfilelocation <- cmdargs[1]
-val= cmdargs[2]
-
-#cat(inputfilelocation)
-#cat("!")
-
-
 library(boot);
 #library(DAAG);
 
@@ -30,8 +20,6 @@ library(glmnet);
 library(optimx);
 
 
-cat(inputfilelocation)
-cat("!")
 
 cmdargs <- commandArgs(trailingOnly=TRUE)
 
@@ -48,6 +36,8 @@ mydata <- read_excel(inputfilelocation)
 #names(mydata)
 
 
+cat(inputfilelocation)
+cat("!")
 
 
 #exportdf <- mydata
