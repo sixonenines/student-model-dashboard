@@ -1,5 +1,5 @@
 library(boot);
-#library(DAAG);
+library(DAAG);
 
 library(lme4);
 
