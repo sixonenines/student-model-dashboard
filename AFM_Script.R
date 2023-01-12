@@ -10,8 +10,7 @@ val= cmdargs[2]
 
 library(boot);
 #library(DAAG);
-cat(inputfilelocation)
-cat("!")
+
 library(lme4);
 
 library(tidyverse);
@@ -29,6 +28,10 @@ library(glmnet);
 #library(glmnetUtils);
 
 library(optimx);
+
+
+cat(inputfilelocation)
+cat("!")
 
 cmdargs <- commandArgs(trailingOnly=TRUE)
 
