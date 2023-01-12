@@ -1,6 +1,8 @@
 libpng16-16
 r-base
 r-base-dev
+r-DAAG
+r-cran-DAAG
 r-cran-boot
 r-cran-lattice
 r-cran-ggplot2
