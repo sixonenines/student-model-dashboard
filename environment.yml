@@ -1,0 +1,11 @@
+name: stats
+dependencies:
+  - scikit-learn
+  - pandas
+  - patsy
+  - numpy
+  - matplotlib
+  - streamlit-ext
+  - openpyxl
+  - xlxswriter
+  - r-daag
