@@ -1,4 +1,6 @@
 library(boot);
+
+install.packages("DAAG");
 library(DAAG);
 
 library(lme4);
