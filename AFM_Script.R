@@ -36,8 +36,6 @@ mydata <- read_excel(inputfilelocation)
 #names(mydata)
 
 
-cat(inputfilelocation)
-cat("!")
 
 
 #exportdf <- mydata
@@ -121,6 +119,10 @@ mydata["IncorrectModel"] = as.numeric(as.character(mydata$`Incorrects`))
 
 mydata["TellsModel"] = as.numeric(as.character(mydata$`Hints`))
   
+
+cat(inputfilelocation)
+cat("!")
+
 
 AFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:OpportunityModel
 AFMTrainingModel <- glm(AFM_form, family=binomial(), data= mydata); 
