@@ -1,8 +1,5 @@
 library(boot);
-
-install.packages("DAAG");
 library(DAAG);
-
 library(lme4);
 
 library(tidyverse);
@@ -17,7 +14,7 @@ library(readxl);
 #library(pROC);
 library(readxl);
 library(glmnet);
-#library(glmnetUtils);
+l#ibrary(glmnetUtils);
 
 library(optimx);
 
@@ -121,10 +118,6 @@ mydata["IncorrectModel"] = as.numeric(as.character(mydata$`Incorrects`))
 
 mydata["TellsModel"] = as.numeric(as.character(mydata$`Hints`))
   
-
-cat(inputfilelocation)
-cat("!")
-
 
 AFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:OpportunityModel
 AFMTrainingModel <- glm(AFM_form, family=binomial(), data= mydata); 
