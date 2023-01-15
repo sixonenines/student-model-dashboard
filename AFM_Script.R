@@ -14,11 +14,9 @@ library(readxl);
 #library(pROC);
 library(readxl);
 library(glmnet);
-l#ibrary(glmnetUtils);
+#library(glmnetUtils);
 
 library(optimx);
-
-
 
 cmdargs <- commandArgs(trailingOnly=TRUE)
 
@@ -268,8 +266,6 @@ write.csv(ModelPredictions, predictionfilepath, row.names=FALSE)
 write.csv(exportdf, outputfilelocation, row.names=FALSE)
 write.csv(coef(AFMTrainingModel), coefficientfilelocation,row.names=TRUE)
 
-cat(outputfilelocation)
-cat("!")
-cat(coefficientfilelocation)
-cat("!")
-cat(predictionfilepath)
+
+
+quit(status=0)

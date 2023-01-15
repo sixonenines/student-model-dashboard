@@ -14,7 +14,7 @@ library(readxl);
 #library(pROC);
 library(readxl);
 library(glmnet);
-l#ibrary(glmnetUtils);
+#library(glmnetUtils);
 
 library(optimx);
 
@@ -26,7 +26,6 @@ val= cmdargs[2]
 outputfilelocation <- paste("./output/IFM_Rstats_",val,".csv",sep="")
 coefficientfilelocation <- paste("./output/IFM_Rcoef_",val,".csv",sep="")
 predictionfilepath <- paste("./output/IFM_Pred_",val,".csv",sep="")
-
 
 #write("print", stdout())
 #write(filelocation, stdout())
@@ -79,7 +78,11 @@ names(F1)<-c("IFM")
 #Models_AIC <- rep(1,3);
 #Models_BIC <- rep(1,3);
 #ACCcv <- rep(1,3);
-#NumParameters <- rep(1,r_modeltype <- paste("R_",Model_type,sep="")","PFM","IFM")
+#NumParameters <- rep(1,3);
+#Likelihood <- rep(1,3);
+#BrierScore <- rep(1,3);
+#LogLoss <- rep(1,3);
+#names(LogLoss)<- c("AFM","PFM","IFM")
 #names(Models_AIC)<-c("AFM", "PFM", "IFM")
 #names(Models_BIC)<-c("AFM", "PFM", "IFM")
 #names(ACCcv)<-c("AFM", "PFM", "IFM")
@@ -114,16 +117,9 @@ mydata["IncorrectModel"] = as.numeric(as.character(mydata$`Incorrects`))
 mydata["TellsModel"] = as.numeric(as.character(mydata$`Hints`))
   
 
-#AFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:OpportunityModel
-#AFMTrainingModel <- glm(AFM_form, family=binomial(), data= mydata); 
-
-
-#PFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:(CorrectModel + IncorrectModel)
-#PFMTrainingModel <- glm(PFM_form, family=binomial(), data= mydata); 
-
-
 IFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:(CorrectModel + IncorrectModel + TellsModel)
 IFMTrainingModel <- glm(IFM_form, family=binomial(), data= mydata); 
+
 
 IFMprobabilities <- IFMTrainingModel %>% predict(mydata, type = "response")
 IFMpredictedProbabilities <- ifelse(IFMprobabilities>0.5, IFMprobabilities, 1-IFMprobabilities)
@@ -131,15 +127,25 @@ IFMprediction <- ifelse(IFMprobabilities >0.5,1,0)
 
 ModelPredictions <- data.frame(R_IFMpredictedProbabilities=IFMpredictedProbabilities,R_IFMprediction=IFMprediction)
 
-#cvafm = CVbinary(AFMTrainingModel,print.details=FALSE);
-#ACCcv["AFM"] <- cvafm$acc.cv
+
+#PFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:(CorrectModel + IncorrectModel)
+#PFMTrainingModel <- glm(PFM_form, family=binomial(), data= mydata); 
+
+
+#IFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:(CorrectModel + IncorrectModel + TellsModel)
+#IFMTrainingModel <- glm(IFM_form, family=binomial(), data= mydata); 
+
+
+
+cvifm = CVbinary(IFMTrainingModel,print.details=FALSE);
+ACCcv["IFM"] <- cvifm$acc.cv
 
 
 #cvpfm = CVbinary(PFMTrainingModel,print.details=FALSE);
 #ACCcv["PFM"] <- cvpfm$acc.cv
 
-cvifm = CVbinary(IFMTrainingModel,print.details=FALSE);
-ACCcv["IFM"] <- cvifm$acc.cv
+#cvifm = CVbinary(IFMTrainingModel,print.details=FALSE);
+#ACCcv["IFM"] <- cvifm$acc.cv
 
 
 
@@ -152,36 +158,16 @@ train_ind <- sample(seq_len(nrow(mydata)), size = sample_size)
 traindata <- mydata[train_ind, ]
 testdata <- mydata[-train_ind, ]
 
-#AFMTrainingTestModel <- glm(AFM_form, family=binomial(), data= traindata); 
-#PFMTrainingTestModel <- glm(PFM_form, family=binomial(), data= traindata); 
 IFMTrainingTestModel <- glm(IFM_form, family=binomial(), data= traindata); 
-
-#afmProbabilities <- AFMTrainingTestModel %>% predict(testdata, type = "response")
-
-#testdata$afmprediction <- ifelse(afmProbabilities >0.5,1,0)
-
-#Check the error between real outcomes and predicted variables 
-#RMSE["AFM"]<-sqrt(mean((testdata$Outcome - testdata$afmprediction)^2))
-
-
-#pfmProbabilities <- PFMTrainingTestModel %>% predict(testdata, type = "response")
-
-
-#testdata$pfmprediction <- ifelse(pfmProbabilities >0.5,1,0)
-
-#Check the error between real outcomes and predicted variables 
-#RMSE["PFM"]<-sqrt(mean((testdata$Outcome - testdata$pfmprediction)^2))
-
-
+#PFMTrainingTestModel <- glm(PFM_form, family=binomial(), data= traindata); 
+#IFMTrainingTestModel <- glm(IFM_form, family=binomial(), data= traindata); 
 
 ifmProbabilities <- IFMTrainingTestModel %>% predict(testdata, type = "response")
-
 
 testdata$ifmprediction <- ifelse(ifmProbabilities >0.5,1,0)
 
 #Check the error between real outcomes and predicted variables 
 RMSE["IFM"]<-sqrt(mean((testdata$Outcome - testdata$ifmprediction)^2))
-
 
 confusion_matrix=table(ACTUAL=testdata$Outcome,PREDICTED=testdata$ifmprediction)
 TN=confusion_matrix[1,1]
@@ -194,42 +180,58 @@ F1s<- (2*(Precisions*Recalls)) / (Precisions+Recalls)
 Precision["IFM"]<- Precisions
 Recall["IFM"] <- Recalls
 F1["IFM"] <- F1s
+#pfmProbabilities <- PFMTrainingTestModel %>% predict(testdata, type = "response")
+
+
+#testdata$pfmprediction <- ifelse(pfmProbabilities >0.5,1,0)
+
+#Check the error between real outcomes and predicted variables 
+#RMSE["PFM"]<-sqrt(mean((testdata$Outcome - testdata$pfmprediction)^2))
+
+
+
+#ifmProbabilities <- IFMTrainingTestModel %>% predict(testdata, type = "response")
+
+#testdata$ifmprediction <- ifelse(ifmProbabilities >0.5,1,0)
+
+#Check the error between real outcomes and predicted variables 
+#RMSE["IFM"]<-sqrt(mean((testdata$Outcome - testdata$ifmprediction)^2))
 
 
 N<-nrow(mydata)
-#Models_AIC["AFM"]<-summary(AFMTrainingModel)$aic	
-#Models_BIC["AFM"]<-summary(AFMTrainingModel)$aic+length(coef(AFMTrainingModel))*(log(N)-2);
+Models_AIC["IFM"]<-summary(IFMTrainingModel)$aic	
+Models_BIC["IFM"]<-summary(IFMTrainingModel)$aic+length(coef(IFMTrainingModel))*(log(N)-2);
 
 
 
 #Models_AIC["PFM"]<-summary(PFMTrainingModel)$aic	
 #Models_BIC["PFM"]<-summary(PFMTrainingModel)$aic+length(coef(PFMTrainingModel))*(log(N)-2);
 
-Models_AIC["IFM"]<-summary(IFMTrainingModel)$aic	
-Models_BIC["IFM"]<-summary(IFMTrainingModel)$aic+length(coef(IFMTrainingModel))*(log(N)-2);
+#Models_AIC["IFM"]<-summary(IFMTrainingModel)$aic	
+#Models_BIC["IFM"]<-summary(IFMTrainingModel)$aic+length(coef(IFMTrainingModel))*(log(N)-2);
 
 
-#NumParameters["AFM"] <- length(coef(AFMTrainingModel))
-#NumParameters["PFM"] <- length(coef(PFMTrainingModel))
 NumParameters["IFM"] <- length(coef(IFMTrainingModel))
+#NumParameters["PFM"] <- length(coef(PFMTrainingModel))
+#NumParameters["IFM"] <- length(coef(IFMTrainingModel))
   
-#Likelihood["AFM"] <- -summary(AFMTrainingModel)$deviance/2
-#Likelihood["PFM"] <- -summary(PFMTrainingModel)$deviance/2
 Likelihood["IFM"] <- -summary(IFMTrainingModel)$deviance/2
+#Likelihood["PFM"] <- -summary(PFMTrainingModel)$deviance/2
+#Likelihood["IFM"] <- -summary(IFMTrainingModel)$deviance/2
 
 
-#afmpred.prob <- predict(AFMTrainingModel,type='response')
-#pfmpred.prob <- predict(PFMTrainingModel,type='response')
 ifmpred.prob <- predict(IFMTrainingModel,type='response')
+#pfmpred.prob <- predict(PFMTrainingModel,type='response')
+#ifmpred.prob <- predict(IFMTrainingModel,type='response')
 
-#BrierScore["AFM"] <- mean((afmpred.prob-mydata$Outcome)^2)
-#BrierScore["PFM"] <- mean((pfmpred.prob-mydata$Outcome)^2)
 BrierScore["IFM"] <- mean((ifmpred.prob-mydata$Outcome)^2)
+#BrierScore["PFM"] <- mean((pfmpred.prob-mydata$Outcome)^2)
+#BrierScore["IFM"] <- mean((ifmpred.prob-mydata$Outcome)^2)
 
 
-#AICc["AFM"] <- -2*(Likelihood["AFM"])+2*NumParameters["AFM"]+(2*NumParameters["AFM"]*(NumParameters["AFM"]+1)/(N-NumParameters["AFM"]-1))
-#AICc["PFM"] <- -2*(Likelihood["PFM"])+2*NumParameters["PFM"]+(2*NumParameters["PFM"]*(NumParameters["PFM"]+1)/(N-NumParameters["PFM"]-1))
 AICc["IFM"] <- -2*(Likelihood["IFM"])+2*NumParameters["IFM"]+(2*NumParameters["IFM"]*(NumParameters["IFM"]+1)/(N-NumParameters["IFM"]-1))
+#AICc["PFM"] <- -2*(Likelihood["PFM"])+2*NumParameters["PFM"]+(2*NumParameters["PFM"]*(NumParameters["PFM"]+1)/(N-NumParameters["PFM"]-1))
+#AICc["IFM"] <- -2*(Likelihood["IFM"])+2*NumParameters["IFM"]+(2*NumParameters["IFM"]*(NumParameters["IFM"]+1)/(N-NumParameters["IFM"]-1))
 
 
 
@@ -240,9 +242,9 @@ logLoss <- function(pred, actual){
 
 
 
-#LogLoss["AFM"] <- logLoss(pred = afmpred.prob,actual = mydata$Outcome)
+LogLoss["IFM"] <- logLoss(pred =ifmpred.prob,actual = mydata$Outcome)
 #LogLoss["PFM"] <- logLoss(pred = pfmpred.prob,actual = mydata$Outcome)
-LogLoss["IFM"] <- logLoss(pred = ifmpred.prob,actual = mydata$Outcome)
+#LogLoss["IFM"] <- logLoss(pred = ifmpred.prob,actual = mydata$Outcome)
 
 
 
@@ -264,8 +266,4 @@ write.csv(ModelPredictions, predictionfilepath, row.names=FALSE)
 write.csv(exportdf, outputfilelocation, row.names=FALSE)
 write.csv(coef(IFMTrainingModel), coefficientfilelocation,row.names=TRUE)
 
-cat(outputfilelocation)
-cat("!")
-cat(coefficientfilelocation)
-cat("!")
-cat(predictionfilepath)
+quit(status=0)
