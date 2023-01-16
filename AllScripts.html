@@ -1,0 +1,1068 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+.inline {
+  background-color: #f7f7f7;
+  border:solid 1px #B0B0B0;
+}
+.error {
+	font-weight: bold;
+	color: #FF0000;
+}
+.warning {
+	font-weight: bold;
+}
+.message {
+	font-style: italic;
+}
+.source, .output, .warning, .error, .message {
+	padding: 0 1em;
+  border:solid 1px #F7F7F7;
+}
+.source {
+  background-color: #f5f5f5;
+}
+.left {
+  text-align: left;
+}
+.right {
+  text-align: right;
+}
+.center {
+  text-align: center;
+}
+.hl.num {
+  color: #AF0F91;
+}
+.hl.str {
+  color: #317ECC;
+}
+.hl.com {
+  color: #AD95AF;
+  font-style: italic;
+}
+.hl.opt {
+  color: #000000;
+}
+.hl.std {
+  color: #585858;
+}
+.hl.kwa {
+  color: #295F94;
+  font-weight: bold;
+}
+.hl.kwb {
+  color: #B05A65;
+}
+.hl.kwc {
+  color: #55aa55;
+}
+.hl.kwd {
+  color: #BC5A65;
+  font-weight: bold;
+}
+</style>
+  <script src="https://yihui.name/media/js/center-images.js"></script>
+  <title></title>
+</head>
+<body>
+
+  <p>This report is automatically generated with the R
+    package <a href="https://yihui.name/knitr/"><strong>knitr</strong></a>
+    (version <code class="knitr inline">1.41</code>)
+    .</p>
+
+<div class="chunk" id="auto-report"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(boot);</span>
+<span class="hl kwd">library</span><span class="hl std">(DAAG);</span>
+<span class="hl kwd">library</span><span class="hl std">(lme4);</span>
+
+<span class="hl kwd">library</span><span class="hl std">(tidyverse);</span>
+<span class="hl kwd">library</span><span class="hl std">(caret);</span>
+
+
+<span class="hl kwd">library</span><span class="hl std">(plyr);</span>
+<span class="hl kwd">library</span><span class="hl std">(caret);</span>
+<span class="hl kwd">library</span><span class="hl std">(car);</span>
+<span class="hl kwd">library</span><span class="hl std">(pROC);</span>
+<span class="hl kwd">library</span><span class="hl std">(readxl);</span>
+<span class="hl kwd">library</span><span class="hl std">(pROC);</span>
+<span class="hl kwd">library</span><span class="hl std">(readxl);</span>
+<span class="hl kwd">library</span><span class="hl std">(glmnet);</span>
+<span class="hl kwd">library</span><span class="hl std">(glmnetUtils);</span>
+
+<span class="hl kwd">library</span><span class="hl std">(optimx);</span>
+
+
+
+<span class="hl com">#cmdargs &lt;- commandArgs(trailingOnly=TRUE)</span>
+<span class="hl com">#inputfilelocation &lt;- cmdargs[1]</span>
+<span class="hl std">inputfilelocation</span> <span class="hl kwb">&lt;-</span> <span class="hl str">&quot;fractions2013.xlsx&quot;</span>
+<span class="hl std">val</span><span class="hl kwb">=</span> <span class="hl str">&quot;cmdargs2&quot;</span>
+<span class="hl std">outputfilelocation</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">paste</span><span class="hl std">(</span><span class="hl str">&quot;Rstats_&quot;</span><span class="hl std">,val,</span><span class="hl str">&quot;.csv&quot;</span><span class="hl std">,</span><span class="hl kwc">sep</span><span class="hl std">=</span><span class="hl str">&quot;&quot;</span><span class="hl std">)</span>
+<span class="hl std">coefficientfilelocation</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">paste</span><span class="hl std">(</span><span class="hl str">&quot;Rcoef_&quot;</span><span class="hl std">,val,</span><span class="hl str">&quot;.csv&quot;</span><span class="hl std">,</span><span class="hl kwc">sep</span><span class="hl std">=</span><span class="hl str">&quot;&quot;</span><span class="hl std">)</span>
+<span class="hl std">predictionfilepath</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">paste</span><span class="hl std">(</span><span class="hl str">&quot;RPred_&quot;</span><span class="hl std">,val,</span><span class="hl str">&quot;.csv&quot;</span><span class="hl std">,</span><span class="hl kwc">sep</span><span class="hl std">=</span><span class="hl str">&quot;&quot;</span><span class="hl std">)</span>
+
+<span class="hl std">mydata</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">read_excel</span><span class="hl std">(inputfilelocation)</span>
+
+
+<span class="hl std">Model_type</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl std">Models_AIC</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">Models_BIC</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">AICc</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">RMSE</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">ACCcv</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">NumParameters</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">Likelihood</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">BrierScore</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">LogLoss</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">Precision</span><span class="hl kwb">&lt;-</span><span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">Recall</span><span class="hl kwb">&lt;-</span><span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl std">F1</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rep</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">3</span><span class="hl std">);</span>
+<span class="hl kwd">names</span><span class="hl std">(AICc)</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(RMSE)</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(LogLoss)</span><span class="hl kwb">&lt;-</span> <span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(Models_AIC)</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(Models_BIC)</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(ACCcv)</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(NumParameters)</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(Likelihood)</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(BrierScore)</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(Precision)</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(Recall)</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">names</span><span class="hl std">(F1)</span><span class="hl kwb">&lt;-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">,</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">)</span>
+
+<span class="hl com"># Prepare Data</span>
+
+<span class="hl std">mydata</span><span class="hl opt">$</span><span class="hl std">`First Attempt`</span> <span class="hl kwb">=</span> <span class="hl kwd">revalue</span><span class="hl std">(mydata</span><span class="hl opt">$</span><span class="hl std">`First Attempt`,</span> <span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;incorrect&quot;</span><span class="hl std">=</span> <span class="hl num">0</span><span class="hl std">))</span>
+<span class="hl std">mydata</span><span class="hl opt">$</span><span class="hl std">`First Attempt`</span> <span class="hl kwb">=</span> <span class="hl kwd">revalue</span><span class="hl std">(mydata</span><span class="hl opt">$</span><span class="hl std">`First Attempt`,</span> <span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;hint&quot;</span><span class="hl std">=</span> <span class="hl num">0</span><span class="hl std">))</span>
+<span class="hl std">mydata</span><span class="hl opt">$</span><span class="hl std">`First Attempt`</span> <span class="hl kwb">=</span> <span class="hl kwd">revalue</span><span class="hl std">(mydata</span><span class="hl opt">$</span><span class="hl std">`First Attempt`,</span> <span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;correct&quot;</span><span class="hl std">=</span> <span class="hl num">1</span><span class="hl std">))</span>
+
+<span class="hl std">mydata[</span><span class="hl str">&quot;Outcome&quot;</span><span class="hl std">]</span> <span class="hl kwb">=</span> <span class="hl kwd">as.numeric</span><span class="hl std">(mydata</span><span class="hl opt">$</span><span class="hl std">`First Attempt`)</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: NAs introduced by coercion
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">mydata</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">na.omit</span><span class="hl std">(mydata)</span>
+
+
+<span class="hl std">mydata[</span><span class="hl str">&quot;KCModel&quot;</span><span class="hl std">]</span> <span class="hl kwb">=</span> <span class="hl std">mydata</span><span class="hl opt">$</span><span class="hl std">`KC (Default)`</span>
+<span class="hl std">mydata[</span><span class="hl str">&quot;OpportunityModel&quot;</span><span class="hl std">]</span> <span class="hl kwb">=</span> <span class="hl kwd">as.numeric</span><span class="hl std">(</span><span class="hl kwd">as.character</span><span class="hl std">(mydata</span><span class="hl opt">$</span><span class="hl std">`Opportunity`))</span>
+
+<span class="hl std">mydata[</span><span class="hl str">&quot;CorrectModel&quot;</span><span class="hl std">]</span> <span class="hl kwb">=</span> <span class="hl kwd">as.numeric</span><span class="hl std">(</span><span class="hl kwd">as.character</span><span class="hl std">(mydata</span><span class="hl opt">$</span><span class="hl std">`Corrects`))</span>
+<span class="hl std">mydata[</span><span class="hl str">&quot;IncorrectModel&quot;</span><span class="hl std">]</span> <span class="hl kwb">=</span> <span class="hl kwd">as.numeric</span><span class="hl std">(</span><span class="hl kwd">as.character</span><span class="hl std">(mydata</span><span class="hl opt">$</span><span class="hl std">`Incorrects`))</span>
+
+<span class="hl std">mydata[</span><span class="hl str">&quot;TellsModel&quot;</span><span class="hl std">]</span> <span class="hl kwb">=</span> <span class="hl kwd">as.numeric</span><span class="hl std">(</span><span class="hl kwd">as.character</span><span class="hl std">(mydata</span><span class="hl opt">$</span><span class="hl std">`Hints`))</span>
+
+<span class="hl com"># Define Form and Build Models</span>
+
+<span class="hl std">AFM_form</span> <span class="hl kwb">&lt;-</span> <span class="hl std">Outcome</span> <span class="hl opt">~</span> <span class="hl std">AnonStudentId</span> <span class="hl opt">+</span><span class="hl std">KCModel</span> <span class="hl opt">+</span> <span class="hl std">KCModel</span><span class="hl opt">:</span><span class="hl std">OpportunityModel</span>
+<span class="hl std">AFMTrainingModel</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">glm</span><span class="hl std">(AFM_form,</span> <span class="hl kwc">family</span><span class="hl std">=</span><span class="hl kwd">binomial</span><span class="hl std">(),</span> <span class="hl kwc">data</span><span class="hl std">= mydata);</span>
+
+<span class="hl std">PFM_form</span> <span class="hl kwb">&lt;-</span> <span class="hl std">Outcome</span> <span class="hl opt">~</span> <span class="hl std">AnonStudentId</span> <span class="hl opt">+</span><span class="hl std">KCModel</span> <span class="hl opt">+</span> <span class="hl std">KCModel</span><span class="hl opt">:</span><span class="hl std">(CorrectModel</span> <span class="hl opt">+</span> <span class="hl std">IncorrectModel)</span>
+<span class="hl std">PFMTrainingModel</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">glm</span><span class="hl std">(PFM_form,</span> <span class="hl kwc">family</span><span class="hl std">=</span><span class="hl kwd">binomial</span><span class="hl std">(),</span> <span class="hl kwc">data</span><span class="hl std">= mydata);</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">IFM_form</span> <span class="hl kwb">&lt;-</span> <span class="hl std">Outcome</span> <span class="hl opt">~</span> <span class="hl std">AnonStudentId</span> <span class="hl opt">+</span><span class="hl std">KCModel</span> <span class="hl opt">+</span> <span class="hl std">KCModel</span><span class="hl opt">:</span><span class="hl std">(CorrectModel</span> <span class="hl opt">+</span> <span class="hl std">IncorrectModel</span> <span class="hl opt">+</span> <span class="hl std">TellsModel)</span>
+<span class="hl std">IFMTrainingModel</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">glm</span><span class="hl std">(IFM_form,</span> <span class="hl kwc">family</span><span class="hl std">=</span><span class="hl kwd">binomial</span><span class="hl std">(),</span> <span class="hl kwc">data</span><span class="hl std">= mydata);</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl com"># Calculate predicted probabilities per step and add it to the dataset</span>
+
+<span class="hl std">AFMprobabilities</span> <span class="hl kwb">&lt;-</span> <span class="hl std">AFMTrainingModel</span> <span class="hl opt">%&gt;%</span> <span class="hl kwd">predict</span><span class="hl std">(mydata,</span> <span class="hl kwc">type</span> <span class="hl std">=</span> <span class="hl str">&quot;response&quot;</span><span class="hl std">)</span>
+<span class="hl std">AFMpredictedProbabilities</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ifelse</span><span class="hl std">(AFMprobabilities</span><span class="hl opt">&gt;</span><span class="hl num">0.5</span><span class="hl std">, AFMprobabilities,</span> <span class="hl num">1</span><span class="hl opt">-</span><span class="hl std">AFMprobabilities)</span>
+<span class="hl std">AFMprediction</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ifelse</span><span class="hl std">(AFMprobabilities</span> <span class="hl opt">&gt;</span><span class="hl num">0.5</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">)</span>
+<span class="hl std">PFMprobabilities</span> <span class="hl kwb">&lt;-</span> <span class="hl std">PFMTrainingModel</span> <span class="hl opt">%&gt;%</span> <span class="hl kwd">predict</span><span class="hl std">(mydata,</span> <span class="hl kwc">type</span> <span class="hl std">=</span> <span class="hl str">&quot;response&quot;</span><span class="hl std">)</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">PFMpredictedProbabilities</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ifelse</span><span class="hl std">(PFMprobabilities</span><span class="hl opt">&gt;</span><span class="hl num">0.5</span><span class="hl std">, PFMprobabilities,</span> <span class="hl num">1</span><span class="hl opt">-</span><span class="hl std">PFMprobabilities)</span>
+<span class="hl std">PFMprediction</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ifelse</span><span class="hl std">(PFMprobabilities</span> <span class="hl opt">&gt;</span><span class="hl num">0.5</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">)</span>
+<span class="hl std">IFMprobabilities</span> <span class="hl kwb">&lt;-</span> <span class="hl std">IFMTrainingModel</span> <span class="hl opt">%&gt;%</span> <span class="hl kwd">predict</span><span class="hl std">(mydata,</span> <span class="hl kwc">type</span> <span class="hl std">=</span> <span class="hl str">&quot;response&quot;</span><span class="hl std">)</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">IFMpredictedProbabilities</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ifelse</span><span class="hl std">(IFMprobabilities</span><span class="hl opt">&gt;</span><span class="hl num">0.5</span><span class="hl std">, IFMprobabilities,</span> <span class="hl num">1</span><span class="hl opt">-</span><span class="hl std">IFMprobabilities)</span>
+<span class="hl std">IFMprediction</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ifelse</span><span class="hl std">(IFMprobabilities</span> <span class="hl opt">&gt;</span><span class="hl num">0.5</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">)</span>
+
+<span class="hl std">ModelPredictions</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">data.frame</span><span class="hl std">(</span><span class="hl kwc">R_AFMpredictedProbabilities</span><span class="hl std">=AFMpredictedProbabilities,</span><span class="hl kwc">R_AFMprediction</span><span class="hl std">=AFMprediction,</span>
+<span class="hl kwc">R_PFMpredictedProbabilities</span><span class="hl std">=PFMpredictedProbabilities,</span><span class="hl kwc">R_PFMprediction</span><span class="hl std">=PFMprediction,</span>
+<span class="hl kwc">R_IFMpredictedProbabilities</span><span class="hl std">=IFMpredictedProbabilities,</span><span class="hl kwc">R_IFMprediction</span><span class="hl std">=IFMprediction)</span>
+
+<span class="hl com"># CV</span>
+<span class="hl std">cvafm</span> <span class="hl kwb">=</span> <span class="hl kwd">CVbinary</span><span class="hl std">(AFMTrainingModel,</span><span class="hl kwc">print.details</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">);</span>
+<span class="hl std">ACCcv[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl std">cvafm</span><span class="hl opt">$</span><span class="hl std">acc.cv</span>
+<span class="hl std">cvpfm</span> <span class="hl kwb">=</span> <span class="hl kwd">CVbinary</span><span class="hl std">(PFMTrainingModel,</span><span class="hl kwc">print.details</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">);</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">ACCcv[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl std">cvpfm</span><span class="hl opt">$</span><span class="hl std">acc.cv</span>
+<span class="hl std">cvifm</span> <span class="hl kwb">=</span> <span class="hl kwd">CVbinary</span><span class="hl std">(IFMTrainingModel,</span><span class="hl kwc">print.details</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">);</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">ACCcv[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl std">cvifm</span><span class="hl opt">$</span><span class="hl std">acc.cv</span>
+
+
+<span class="hl com"># Calculate RMSE and Binary Classifiers for Models trained using Pareto Principle</span>
+<span class="hl std">cols</span> <span class="hl kwb">=</span> <span class="hl kwd">ncol</span><span class="hl std">(mydata)</span>
+<span class="hl std">sample_size</span> <span class="hl kwb">=</span> <span class="hl kwd">floor</span><span class="hl std">(</span><span class="hl num">0.8</span> <span class="hl opt">*</span><span class="hl kwd">nrow</span><span class="hl std">(mydata))</span>
+<span class="hl kwd">set.seed</span><span class="hl std">(</span><span class="hl num">123</span><span class="hl std">)</span>
+<span class="hl std">train_ind</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">sample</span><span class="hl std">(</span><span class="hl kwd">seq_len</span><span class="hl std">(</span><span class="hl kwd">nrow</span><span class="hl std">(mydata)),</span> <span class="hl kwc">size</span> <span class="hl std">= sample_size)</span>
+<span class="hl std">traindata</span> <span class="hl kwb">&lt;-</span> <span class="hl std">mydata[train_ind, ]</span>
+<span class="hl std">testdata</span> <span class="hl kwb">&lt;-</span> <span class="hl std">mydata[</span><span class="hl opt">-</span><span class="hl std">train_ind, ]</span>
+
+<span class="hl std">AFMTrainingTestModel</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">glm</span><span class="hl std">(AFM_form,</span> <span class="hl kwc">family</span><span class="hl std">=</span><span class="hl kwd">binomial</span><span class="hl std">(),</span> <span class="hl kwc">data</span><span class="hl std">= traindata);</span>
+<span class="hl std">PFMTrainingTestModel</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">glm</span><span class="hl std">(PFM_form,</span> <span class="hl kwc">family</span><span class="hl std">=</span><span class="hl kwd">binomial</span><span class="hl std">(),</span> <span class="hl kwc">data</span><span class="hl std">= traindata);</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">IFMTrainingTestModel</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">glm</span><span class="hl std">(IFM_form,</span> <span class="hl kwc">family</span><span class="hl std">=</span><span class="hl kwd">binomial</span><span class="hl std">(),</span> <span class="hl kwc">data</span><span class="hl std">= traindata);</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">afmProbabilities</span> <span class="hl kwb">&lt;-</span> <span class="hl std">AFMTrainingTestModel</span> <span class="hl opt">%&gt;%</span> <span class="hl kwd">predict</span><span class="hl std">(testdata,</span> <span class="hl kwc">type</span> <span class="hl std">=</span> <span class="hl str">&quot;response&quot;</span><span class="hl std">)</span>
+<span class="hl std">testdata</span><span class="hl opt">$</span><span class="hl std">afmprediction</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ifelse</span><span class="hl std">(afmProbabilities</span> <span class="hl opt">&gt;</span><span class="hl num">0.5</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">)</span>
+<span class="hl std">pfmProbabilities</span> <span class="hl kwb">&lt;-</span> <span class="hl std">PFMTrainingTestModel</span> <span class="hl opt">%&gt;%</span> <span class="hl kwd">predict</span><span class="hl std">(testdata,</span> <span class="hl kwc">type</span> <span class="hl std">=</span> <span class="hl str">&quot;response&quot;</span><span class="hl std">)</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">testdata</span><span class="hl opt">$</span><span class="hl std">pfmprediction</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ifelse</span><span class="hl std">(pfmProbabilities</span> <span class="hl opt">&gt;</span><span class="hl num">0.5</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">)</span>
+<span class="hl std">ifmProbabilities</span> <span class="hl kwb">&lt;-</span> <span class="hl std">IFMTrainingTestModel</span> <span class="hl opt">%&gt;%</span> <span class="hl kwd">predict</span><span class="hl std">(testdata,</span> <span class="hl kwc">type</span> <span class="hl std">=</span> <span class="hl str">&quot;response&quot;</span><span class="hl std">)</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == : prediction from a rank-deficient fit may be misleading
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">testdata</span><span class="hl opt">$</span><span class="hl std">ifmprediction</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ifelse</span><span class="hl std">(ifmProbabilities</span> <span class="hl opt">&gt;</span><span class="hl num">0.5</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">)</span>
+<span class="hl com">#Check the error between real outcomes and predicted variables </span>
+<span class="hl std">RMSE[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span><span class="hl kwd">sqrt</span><span class="hl std">(</span><span class="hl kwd">mean</span><span class="hl std">((testdata</span><span class="hl opt">$</span><span class="hl std">Outcome</span> <span class="hl opt">-</span> <span class="hl std">testdata</span><span class="hl opt">$</span><span class="hl std">afmprediction)</span><span class="hl opt">^</span><span class="hl num">2</span><span class="hl std">))</span>
+<span class="hl std">RMSE[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span><span class="hl kwd">sqrt</span><span class="hl std">(</span><span class="hl kwd">mean</span><span class="hl std">((testdata</span><span class="hl opt">$</span><span class="hl std">Outcome</span> <span class="hl opt">-</span> <span class="hl std">testdata</span><span class="hl opt">$</span><span class="hl std">pfmprediction)</span><span class="hl opt">^</span><span class="hl num">2</span><span class="hl std">))</span>
+<span class="hl std">RMSE[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span><span class="hl kwd">sqrt</span><span class="hl std">(</span><span class="hl kwd">mean</span><span class="hl std">((testdata</span><span class="hl opt">$</span><span class="hl std">Outcome</span> <span class="hl opt">-</span> <span class="hl std">testdata</span><span class="hl opt">$</span><span class="hl std">ifmprediction)</span><span class="hl opt">^</span><span class="hl num">2</span><span class="hl std">))</span>
+
+
+<span class="hl std">confusion_matrix</span><span class="hl kwb">=</span><span class="hl kwd">table</span><span class="hl std">(</span><span class="hl kwc">ACTUAL</span><span class="hl std">=testdata</span><span class="hl opt">$</span><span class="hl std">Outcome,</span><span class="hl kwc">PREDICTED</span><span class="hl std">=testdata</span><span class="hl opt">$</span><span class="hl std">afmprediction)</span>
+<span class="hl std">TN</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">]</span>
+<span class="hl std">FP</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">2</span><span class="hl std">]</span>
+<span class="hl std">FN</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">2</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">]</span>
+<span class="hl std">TP</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">2</span><span class="hl std">,</span><span class="hl num">2</span><span class="hl std">]</span>
+<span class="hl std">Precisions</span><span class="hl kwb">&lt;-</span><span class="hl std">TP</span><span class="hl opt">/</span> <span class="hl std">(TP</span><span class="hl opt">+</span><span class="hl std">FP)</span>
+<span class="hl std">Recalls</span><span class="hl kwb">&lt;-</span><span class="hl std">TP</span><span class="hl opt">/</span> <span class="hl std">(TP</span><span class="hl opt">+</span><span class="hl std">FN)</span>
+<span class="hl std">F1s</span><span class="hl kwb">&lt;-</span> <span class="hl std">(</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">(Precisions</span><span class="hl opt">*</span><span class="hl std">Recalls))</span> <span class="hl opt">/</span> <span class="hl std">(Precisions</span><span class="hl opt">+</span><span class="hl std">Recalls)</span>
+<span class="hl std">Precision[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span> <span class="hl std">Precisions</span>
+<span class="hl std">Recall[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl std">Recalls</span>
+<span class="hl std">F1[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl std">F1s</span>
+
+<span class="hl std">confusion_matrix</span><span class="hl kwb">=</span><span class="hl kwd">table</span><span class="hl std">(</span><span class="hl kwc">ACTUAL</span><span class="hl std">=testdata</span><span class="hl opt">$</span><span class="hl std">Outcome,</span><span class="hl kwc">PREDICTED</span><span class="hl std">=testdata</span><span class="hl opt">$</span><span class="hl std">pfmprediction)</span>
+<span class="hl std">TN</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">]</span>
+<span class="hl std">FP</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">2</span><span class="hl std">]</span>
+<span class="hl std">FN</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">2</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">]</span>
+<span class="hl std">TP</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">2</span><span class="hl std">,</span><span class="hl num">2</span><span class="hl std">]</span>
+<span class="hl std">Precisions</span><span class="hl kwb">&lt;-</span><span class="hl std">TP</span><span class="hl opt">/</span> <span class="hl std">(TP</span><span class="hl opt">+</span><span class="hl std">FP)</span>
+<span class="hl std">Recalls</span><span class="hl kwb">&lt;-</span><span class="hl std">TP</span><span class="hl opt">/</span> <span class="hl std">(TP</span><span class="hl opt">+</span><span class="hl std">FN)</span>
+<span class="hl std">F1s</span><span class="hl kwb">&lt;-</span> <span class="hl std">(</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">(Precisions</span><span class="hl opt">*</span><span class="hl std">Recalls))</span> <span class="hl opt">/</span> <span class="hl std">(Precisions</span><span class="hl opt">+</span><span class="hl std">Recalls)</span>
+<span class="hl std">Precision[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span> <span class="hl std">Precisions</span>
+<span class="hl std">Recall[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl std">Recalls</span>
+<span class="hl std">F1[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl std">F1s</span>
+
+<span class="hl std">confusion_matrix</span><span class="hl kwb">=</span><span class="hl kwd">table</span><span class="hl std">(</span><span class="hl kwc">ACTUAL</span><span class="hl std">=testdata</span><span class="hl opt">$</span><span class="hl std">Outcome,</span><span class="hl kwc">PREDICTED</span><span class="hl std">=testdata</span><span class="hl opt">$</span><span class="hl std">ifmprediction)</span>
+<span class="hl std">TN</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">]</span>
+<span class="hl std">FP</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">1</span><span class="hl std">,</span><span class="hl num">2</span><span class="hl std">]</span>
+<span class="hl std">FN</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">2</span><span class="hl std">,</span><span class="hl num">1</span><span class="hl std">]</span>
+<span class="hl std">TP</span><span class="hl kwb">=</span><span class="hl std">confusion_matrix[</span><span class="hl num">2</span><span class="hl std">,</span><span class="hl num">2</span><span class="hl std">]</span>
+<span class="hl std">Precisions</span><span class="hl kwb">&lt;-</span><span class="hl std">TP</span><span class="hl opt">/</span> <span class="hl std">(TP</span><span class="hl opt">+</span><span class="hl std">FP)</span>
+<span class="hl std">Recalls</span><span class="hl kwb">&lt;-</span><span class="hl std">TP</span><span class="hl opt">/</span> <span class="hl std">(TP</span><span class="hl opt">+</span><span class="hl std">FN)</span>
+<span class="hl std">F1s</span><span class="hl kwb">&lt;-</span> <span class="hl std">(</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">(Precisions</span><span class="hl opt">*</span><span class="hl std">Recalls))</span> <span class="hl opt">/</span> <span class="hl std">(Precisions</span><span class="hl opt">+</span><span class="hl std">Recalls)</span>
+<span class="hl std">Precision[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span> <span class="hl std">Precisions</span>
+<span class="hl std">Recall[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl std">Recalls</span>
+<span class="hl std">F1[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl std">F1s</span>
+
+
+<span class="hl com"># Calculate AIC, BIC, Number of Parameters, Likelihood, Brierscore, Aicc and Logloss</span>
+
+<span class="hl std">N</span><span class="hl kwb">&lt;-</span><span class="hl kwd">nrow</span><span class="hl std">(mydata)</span>
+<span class="hl std">Models_AIC[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span><span class="hl kwd">summary</span><span class="hl std">(AFMTrainingModel)</span><span class="hl opt">$</span><span class="hl std">aic</span>
+<span class="hl std">Models_BIC[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span><span class="hl kwd">summary</span><span class="hl std">(AFMTrainingModel)</span><span class="hl opt">$</span><span class="hl std">aic</span><span class="hl opt">+</span><span class="hl kwd">length</span><span class="hl std">(</span><span class="hl kwd">coef</span><span class="hl std">(AFMTrainingModel))</span><span class="hl opt">*</span><span class="hl std">(</span><span class="hl kwd">log</span><span class="hl std">(N)</span><span class="hl opt">-</span><span class="hl num">2</span><span class="hl std">);</span>
+<span class="hl std">Models_AIC[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span><span class="hl kwd">summary</span><span class="hl std">(PFMTrainingModel)</span><span class="hl opt">$</span><span class="hl std">aic</span>
+<span class="hl std">Models_BIC[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span><span class="hl kwd">summary</span><span class="hl std">(PFMTrainingModel)</span><span class="hl opt">$</span><span class="hl std">aic</span><span class="hl opt">+</span><span class="hl kwd">length</span><span class="hl std">(</span><span class="hl kwd">coef</span><span class="hl std">(PFMTrainingModel))</span><span class="hl opt">*</span><span class="hl std">(</span><span class="hl kwd">log</span><span class="hl std">(N)</span><span class="hl opt">-</span><span class="hl num">2</span><span class="hl std">);</span>
+<span class="hl std">Models_AIC[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span><span class="hl kwd">summary</span><span class="hl std">(IFMTrainingModel)</span><span class="hl opt">$</span><span class="hl std">aic</span>
+<span class="hl std">Models_BIC[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span><span class="hl kwb">&lt;-</span><span class="hl kwd">summary</span><span class="hl std">(IFMTrainingModel)</span><span class="hl opt">$</span><span class="hl std">aic</span><span class="hl opt">+</span><span class="hl kwd">length</span><span class="hl std">(</span><span class="hl kwd">coef</span><span class="hl std">(IFMTrainingModel))</span><span class="hl opt">*</span><span class="hl std">(</span><span class="hl kwd">log</span><span class="hl std">(N)</span><span class="hl opt">-</span><span class="hl num">2</span><span class="hl std">);</span>
+<span class="hl std">NumParameters[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">length</span><span class="hl std">(</span><span class="hl kwd">coef</span><span class="hl std">(AFMTrainingModel))</span>
+<span class="hl std">NumParameters[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">length</span><span class="hl std">(</span><span class="hl kwd">coef</span><span class="hl std">(PFMTrainingModel))</span>
+<span class="hl std">NumParameters[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">length</span><span class="hl std">(</span><span class="hl kwd">coef</span><span class="hl std">(IFMTrainingModel))</span>
+<span class="hl std">Likelihood[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl opt">-</span><span class="hl kwd">summary</span><span class="hl std">(AFMTrainingModel)</span><span class="hl opt">$</span><span class="hl std">deviance</span><span class="hl opt">/</span><span class="hl num">2</span>
+<span class="hl std">Likelihood[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl opt">-</span><span class="hl kwd">summary</span><span class="hl std">(PFMTrainingModel)</span><span class="hl opt">$</span><span class="hl std">deviance</span><span class="hl opt">/</span><span class="hl num">2</span>
+<span class="hl std">Likelihood[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl opt">-</span><span class="hl kwd">summary</span><span class="hl std">(IFMTrainingModel)</span><span class="hl opt">$</span><span class="hl std">deviance</span><span class="hl opt">/</span><span class="hl num">2</span>
+<span class="hl std">afmpred.prob</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">predict</span><span class="hl std">(AFMTrainingModel,</span><span class="hl kwc">type</span><span class="hl std">=</span><span class="hl str">'response'</span><span class="hl std">)</span>
+<span class="hl std">pfmpred.prob</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">predict</span><span class="hl std">(PFMTrainingModel,</span><span class="hl kwc">type</span><span class="hl std">=</span><span class="hl str">'response'</span><span class="hl std">)</span>
+<span class="hl std">ifmpred.prob</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">predict</span><span class="hl std">(IFMTrainingModel,</span><span class="hl kwc">type</span><span class="hl std">=</span><span class="hl str">'response'</span><span class="hl std">)</span>
+<span class="hl std">BrierScore[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">mean</span><span class="hl std">((afmpred.prob</span><span class="hl opt">-</span><span class="hl std">mydata</span><span class="hl opt">$</span><span class="hl std">Outcome)</span><span class="hl opt">^</span><span class="hl num">2</span><span class="hl std">)</span>
+<span class="hl std">BrierScore[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">mean</span><span class="hl std">((pfmpred.prob</span><span class="hl opt">-</span><span class="hl std">mydata</span><span class="hl opt">$</span><span class="hl std">Outcome)</span><span class="hl opt">^</span><span class="hl num">2</span><span class="hl std">)</span>
+<span class="hl std">BrierScore[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">mean</span><span class="hl std">((ifmpred.prob</span><span class="hl opt">-</span><span class="hl std">mydata</span><span class="hl opt">$</span><span class="hl std">Outcome)</span><span class="hl opt">^</span><span class="hl num">2</span><span class="hl std">)</span>
+<span class="hl std">AICc[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl opt">-</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">(Likelihood[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">])</span><span class="hl opt">+</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">NumParameters[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span><span class="hl opt">+</span><span class="hl std">(</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">NumParameters[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span><span class="hl opt">*</span><span class="hl std">(NumParameters[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span><span class="hl opt">+</span><span class="hl num">1</span><span class="hl std">)</span><span class="hl opt">/</span><span class="hl std">(N</span><span class="hl opt">-</span><span class="hl std">NumParameters[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span><span class="hl opt">-</span><span class="hl num">1</span><span class="hl std">))</span>
+<span class="hl std">AICc[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl opt">-</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">(Likelihood[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">])</span><span class="hl opt">+</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">NumParameters[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span><span class="hl opt">+</span><span class="hl std">(</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">NumParameters[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span><span class="hl opt">*</span><span class="hl std">(NumParameters[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span><span class="hl opt">+</span><span class="hl num">1</span><span class="hl std">)</span><span class="hl opt">/</span><span class="hl std">(N</span><span class="hl opt">-</span><span class="hl std">NumParameters[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span><span class="hl opt">-</span><span class="hl num">1</span><span class="hl std">))</span>
+<span class="hl std">AICc[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl opt">-</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">(Likelihood[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">])</span><span class="hl opt">+</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">NumParameters[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span><span class="hl opt">+</span><span class="hl std">(</span><span class="hl num">2</span><span class="hl opt">*</span><span class="hl std">NumParameters[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span><span class="hl opt">*</span><span class="hl std">(NumParameters[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span><span class="hl opt">+</span><span class="hl num">1</span><span class="hl std">)</span><span class="hl opt">/</span><span class="hl std">(N</span><span class="hl opt">-</span><span class="hl std">NumParameters[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span><span class="hl opt">-</span><span class="hl num">1</span><span class="hl std">))</span>
+
+<span class="hl std">logLoss</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">(</span><span class="hl kwc">pred</span><span class="hl std">,</span> <span class="hl kwc">actual</span><span class="hl std">){</span>
+  <span class="hl opt">-</span><span class="hl kwd">mean</span><span class="hl std">(actual</span> <span class="hl opt">*</span> <span class="hl kwd">log</span><span class="hl std">(pred)</span> <span class="hl opt">+</span> <span class="hl std">(</span><span class="hl num">1</span> <span class="hl opt">-</span> <span class="hl std">actual)</span> <span class="hl opt">*</span> <span class="hl kwd">log</span><span class="hl std">(</span><span class="hl num">1</span> <span class="hl opt">-</span> <span class="hl std">pred))}</span>
+
+<span class="hl std">LogLoss[</span><span class="hl str">&quot;AFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">logLoss</span><span class="hl std">(</span><span class="hl kwc">pred</span> <span class="hl std">= afmpred.prob,</span><span class="hl kwc">actual</span> <span class="hl std">= mydata</span><span class="hl opt">$</span><span class="hl std">Outcome)</span>
+<span class="hl std">LogLoss[</span><span class="hl str">&quot;PFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">logLoss</span><span class="hl std">(</span><span class="hl kwc">pred</span> <span class="hl std">= pfmpred.prob,</span><span class="hl kwc">actual</span> <span class="hl std">= mydata</span><span class="hl opt">$</span><span class="hl std">Outcome)</span>
+<span class="hl std">LogLoss[</span><span class="hl str">&quot;IFM&quot;</span><span class="hl std">]</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">logLoss</span><span class="hl std">(</span><span class="hl kwc">pred</span> <span class="hl std">= ifmpred.prob,</span><span class="hl kwc">actual</span> <span class="hl std">= mydata</span><span class="hl opt">$</span><span class="hl std">Outcome)</span>
+
+
+<span class="hl std">Model_type</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">paste</span><span class="hl std">(</span><span class="hl str">&quot;R_&quot;</span><span class="hl std">,Model_type,</span><span class="hl kwc">sep</span><span class="hl std">=</span><span class="hl str">&quot;&quot;</span><span class="hl std">)</span>
+<span class="hl std">exportdf</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">cbind</span><span class="hl std">(Model_type,Models_AIC,AICc,Models_BIC,NumParameters,Likelihood,BrierScore,LogLoss,RMSE,ACCcv,Precision,Recall,F1)</span>
+
+<span class="hl com"># Export predicted probabilities to csv</span>
+<span class="hl kwd">write.csv</span><span class="hl std">(ModelPredictions, predictionfilepath,</span> <span class="hl kwc">row.names</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">)</span>
+<span class="hl com"># Export Stats to csv</span>
+<span class="hl kwd">write.csv</span><span class="hl std">(exportdf, outputfilepath,</span> <span class="hl kwc">row.names</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">)</span>
+</pre></div>
+<div class="error"><pre class="knitr r">## Error in utils::write.table(exportdf, outputfilepath, row.names = FALSE, : object 'outputfilepath' not found
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl com"># Export coefficient to csv</span>
+<span class="hl kwd">write.csv</span><span class="hl std">(</span><span class="hl kwd">coef</span><span class="hl std">(AFMTrainingModel), coefficientfilelocation,</span><span class="hl kwc">row.names</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">)</span>
+<span class="hl com">#write.csv(coef(PFMTrainingModel), coefficientfilelocation,row.names=TRUE)</span>
+<span class="hl com">#write.csv(coef(IFMTrainingModel), coefficientfilelocation,row.names=TRUE)</span>
+
+
+<span class="hl com">### Stats</span>
+<span class="hl std">exportdf</span>
+</pre></div>
+<div class="output"><pre class="knitr r">##     Model_type Models_AIC         AICc               Models_BIC         NumParameters Likelihood          BrierScore            LogLoss             
+## AFM &quot;R_AFM&quot;    &quot;8202.47387667526&quot; &quot;8205.94586439591&quot; &quot;9012.04235809868&quot; &quot;116&quot;         &quot;-3985.23693833763&quot; &quot;0.16808004881127&quot;    &quot;0.502235278933539&quot; 
+## PFM &quot;R_PFM&quot;    &quot;1414.02482740125&quot; &quot;1458.80348859643&quot; &quot;2363.17408148388&quot; &quot;136&quot;         &quot;-591.012413700626&quot; &quot;0.0199544176182674&quot;  &quot;0.0744817156522528&quot;
+## IFM &quot;R_IFM&quot;    &quot;475.094848954068&quot; &quot;521.392611875128&quot; &quot;1563.82487569591&quot; &quot;156&quot;         &quot;-101.547424477034&quot; &quot;0.00342143877701692&quot; &quot;0.0127974069914347&quot;
+##     RMSE                ACCcv               Precision           Recall              F1                 
+## AFM &quot;0.534859190934665&quot; &quot;0.734467548834279&quot; &quot;0.742921013412817&quot; &quot;0.901446654611212&quot; &quot;0.814542483660131&quot;
+## PFM &quot;0.184462638570404&quot; &quot;0.96937618147448&quot;  &quot;0.964664310954064&quot; &quot;0.987341772151899&quot; &quot;0.975871313672922&quot;
+## IFM &quot;0.106499554034051&quot; &quot;0.989540012602394&quot; &quot;0.988330341113106&quot; &quot;0.995479204339964&quot; &quot;0.991891891891892&quot;
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl com">### Model Predictions</span>
+<span class="hl std">ModelPredictions</span>
+</pre></div>
+<div class="output"><pre class="knitr r">##     R_AFMpredictedProbabilities R_AFMprediction R_PFMpredictedProbabilities R_PFMprediction R_IFMpredictedProbabilities R_IFMprediction
+## 1                     0.7736376               1                   0.5121509               1                   0.8489836               0
+## 2                     0.7835521               1                   0.5036842               1                   0.7734623               0
+## 3                     0.7151868               1                   0.9152292               1                   0.8744700               1
+## 4                     0.7298841               1                   0.9152292               1                   0.8744700               1
+## 5                     0.8018162               1                   0.9779149               1                   1.0000000               1
+## 6                     0.8702631               1                   0.9925724               1                   1.0000000               1
+## 7                     0.8002529               1                   0.9756246               1                   1.0000000               1
+## 8                     0.7874729               1                   0.9922833               1                   1.0000000               1
+## 9                     0.7879710               1                   0.9948528               1                   1.0000000               1
+## 10                    0.7241929               1                   0.9931092               1                   1.0000000               1
+## 11                    0.8950139               1                   0.9970355               1                   1.0000000               1
+## 12                    0.8580608               1                   0.9779149               1                   1.0000000               1
+## 13                    0.9017569               1                   0.9925724               1                   1.0000000               1
+## 14                    0.6749595               1                   1.0000000               0                   1.0000000               0
+## 15                    0.8668239               1                   0.9985499               1                   1.0000000               1
+## 16                    0.8361177               1                   0.9983639               1                   1.0000000               1
+## 17                    0.9043454               1                   0.9990235               1                   1.0000000               1
+## 18                    0.9003274               1                   0.9779149               1                   1.0000000               1
+## 19                    0.9262533               1                   0.9925724               1                   1.0000000               1
+## 20                    0.8129540               1                   0.9756246               1                   1.0000000               1
+## 21                    0.8370385               1                   0.9922833               1                   1.0000000               1
+## 22                    0.8466438               1                   0.9948528               1                   1.0000000               1
+## 23                    0.7855414               1                   0.9931092               1                   1.0000000               1
+## 24                    0.9240900               1                   0.9970355               1                   1.0000000               1
+## 25                    0.9310196               1                   0.9779149               1                   1.0000000               1
+## 26                    0.9450142               1                   0.9925724               1                   1.0000000               1
+## 27                    0.8089249               1                   0.9963349               1                   1.0000000               1
+## 28                    0.8506744               1                   0.9985499               1                   1.0000000               1
+## 29                    0.8313913               1                   0.9983639               1                   1.0000000               1
+## 30                    0.8706327               1                   0.9990235               1                   1.0000000               1
+## 31                    0.9527567               1                   0.9779149               1                   1.0000000               1
+## 32                    0.9592125               1                   0.9925724               1                   1.0000000               1
+## 33                    0.8250240               1                   1.0000000               0                   1.0000000               0
+## 34                    0.8768522               1                   0.9922833               1                   1.0000000               1
+## 35                    0.8913199               1                   0.9948528               1                   1.0000000               1
+## 36                    0.8363280               1                   0.9931092               1                   1.0000000               1
+## 37                    0.9456029               1                   0.9970355               1                   1.0000000               1
+## 38                    0.9678804               1                   0.9779149               1                   1.0000000               1
+## 39                    0.9698615               1                   0.9925724               1                   1.0000000               1
+## 40                    0.8961701               1                   0.9963349               1                   1.0000000               1
+## 41                    0.8329440               1                   0.9985499               1                   1.0000000               1
+## 42                    0.8265570               1                   1.0000000               0                   1.0000000               0
+## 43                    0.8273071               1                   1.0000000               0                   1.0000000               0
+## 44                    0.9782730               1                   0.9779149               1                   1.0000000               1
+## 45                    0.9777945               1                   0.9925724               1                   1.0000000               1
+## 46                    0.8364718               1                   0.9756246               1                   1.0000000               1
+## 47                    0.9241470               1                   0.9948528               1                   1.0000000               1
+## 48                    0.8769713               1                   0.9931092               1                   1.0000000               1
+## 49                    0.9080078               1                   1.0000000               0                   1.0000000               0
+## 50                    0.9612745               1                   0.9970355               1                   1.0000000               1
+## 51                    0.9853539               1                   0.9779149               1                   1.0000000               1
+## 52                    0.9836746               1                   0.9925724               1                   1.0000000               1
+## 53                    0.9462271               1                   0.9963349               1                   1.0000000               1
+## 54                    0.8135698               1                   0.9985499               1                   1.0000000               1
+## 55                    0.8216137               1                   0.9983639               1                   1.0000000               1
+## 56                    0.7732506               1                   0.9990235               1                   1.0000000               1
+## 57                    0.9593350               1                   0.9722016               1                   0.9505151               1
+## 58                    0.9610686               1                   0.9258074               1                   0.9229908               1
+## 59                    0.7022526               1                   0.9978483               1                   1.0000000               1
+## 60                    0.7725716               1                   0.9988523               1                   1.0000000               1
+## 61                    0.6823868               1                   0.9991902               1                   1.0000000               1
+## 62                    0.7514738               1                   1.0000000               0                   1.0000000               0
+## 63                    0.6956937               1                   1.0000000               0                   1.0000000               0
+## 64                    0.7470874               1                   0.9729619               1                   1.0000000               1
+## 65                    0.7823141               1                   0.9729619               1                   1.0000000               1
+## 66                    0.7925083               1                   0.9985499               1                   1.0000000               1
+## 67                    0.8165608               1                   0.9983639               1                   1.0000000               1
+## 68                    0.7082406               1                   0.9990235               1                   1.0000000               1
+## 69                    0.6890543               1                   0.9978483               1                   1.0000000               1
+## 70                    0.7468193               1                   1.0000000               0                   1.0000000               0
+## 71                    0.7030516               1                   0.9991902               1                   1.0000000               1
+## 72                    0.7691047               1                   0.9581579               1                   1.0000000               1
+## 73                    0.6823361               1                   1.0000000               0                   1.0000000               0
+## 74                    0.8138567               1                   0.9729619               1                   1.0000000               1
+## 75                    0.8417534               1                   0.9729619               1                   1.0000000               1
+## 76                    0.7697409               1                   0.9985499               1                   1.0000000               1
+## 77                    0.8113977               1                   0.9983639               1                   1.0000000               1
+## 78                    0.6334280               1                   1.0000000               0                   1.0000000               0
+## 79                    0.6755412               1                   0.9978483               1                   1.0000000               1
+## 80                    0.7192108               1                   1.0000000               0                   1.0000000               0
+## 81                    0.7229178               1                   0.9991902               1                   1.0000000               1
+## 82                    0.6686714               1                   1.0000000               0                   1.0000000               0
+## 83                    0.7858414               1                   1.0000000               0                   1.0000000               0
+## 84                    0.8661568               1                   0.9729619               1                   1.0000000               1
+## 85                    0.8873009               1                   0.9729619               1                   1.0000000               1
+## 86                    0.7452783               1                   0.9985499               1                   1.0000000               1
+## 87                    0.8061237               1                   0.9983639               1                   1.0000000               1
+## 88                    0.5515779               1                   0.9990235               1                   1.0000000               1
+## 89                    0.6617291               1                   1.0000000               0                   1.0000000               0
+## 90                    0.6898420               1                   1.0000000               0                   1.0000000               0
+## 91                    0.7419427               1                   0.9991902               1                   1.0000000               1
+## 92                    0.8016777               1                   0.9581579               1                   1.0000000               1
+## 93                    0.6547164               1                   0.9978483               1                   1.0000000               1
+## 94                    0.9054692               1                   0.9729619               1                   1.0000000               1
+## 95                    0.9209694               1                   0.9729619               1                   1.0000000               1
+## 96                    0.7191649               1                   0.9985499               1                   1.0000000               1
+## 97                    0.8007385               1                   0.9983639               1                   1.0000000               1
+## 98                    0.5331651               0                   1.0000000               0                   1.0000000               0
+## 99                    0.6536766               1                   0.9694488               1                   1.0000000               0
+## 100                   0.7578342               1                   1.0000000               0                   1.0000000               0
+## 101                   0.6342036               1                   0.9928320               1                   1.0000000               1
+## 102                   0.6514527               1                   0.9663109               1                   1.0000000               1
+## 103                   0.5505544               1                   1.0000000               0                   1.0000000               0
+## 104                   0.6335122               1                   0.9892648               1                   1.0000000               1
+## 105                   0.7990820               1                   0.9994283               0                   0.9999504               0
+## 106                   0.7382381               1                   0.9694488               1                   1.0000000               1
+## 107                   0.8106830               1                   0.9896657               1                   1.0000000               1
+## 108                   0.5079349               0                   0.9948931               1                   1.0000000               1
+## 109                   0.7522629               1                   1.0000000               0                   1.0000000               0
+## 110                   0.7041577               1                   1.0000000               0                   1.0000000               0
+## 111                   0.8151794               1                   0.9986379               1                   1.0000000               1
+## 112                   0.8082102               1                   0.9694488               1                   1.0000000               1
+## 113                   0.8542171               1                   0.9896657               1                   1.0000000               1
+## 114                   0.6697102               1                   0.9663109               1                   1.0000000               1
+## 115                   0.7055588               1                   1.0000000               0                   1.0000000               0
+## 116                   0.7203245               1                   0.9928320               1                   1.0000000               1
+## 117                   0.6308375               1                   1.0000000               0                   1.0000000               0
+## 118                   0.8502823               1                   0.9958681               1                   1.0000000               1
+## 119                   0.8629503               1                   0.9694488               1                   1.0000000               1
+## 120                   0.8891097               1                   0.9896657               1                   1.0000000               1
+## 121                   0.6638714               1                   0.9948931               1                   1.0000000               1
+## 122                   0.7266030               1                   0.9979776               1                   1.0000000               1
+## 123                   0.6970047               1                   0.9977184               1                   1.0000000               1
+## 124                   0.7584351               1                   0.9986379               1                   1.0000000               1
+## 125                   0.9039239               1                   0.9694488               1                   1.0000000               1
+## 126                   0.9164675               1                   0.9896657               1                   1.0000000               1
+## 127                   0.6874702               1                   1.0000000               0                   1.0000000               0
+## 128                   0.7686151               1                   1.0000000               0                   1.0000000               0
+## 129                   0.7927940               1                   0.9928320               1                   1.0000000               1
+## 130                   0.7044775               1                   1.0000000               0                   1.0000000               0
+## 131                   0.8902275               1                   0.9994283               0                   0.9999504               0
+## 132                   0.9335904               1                   0.9694488               1                   1.0000000               1
+## 133                   0.9375500               1                   0.9896657               1                   1.0000000               1
+## 134                   0.8010598               1                   0.9948931               1                   1.0000000               1
+## 135                   0.6993474               1                   1.0000000               0                   1.0000000               0
+## 136                   0.6897550               1                   0.9977184               1                   1.0000000               1
+## 137                   0.6908756               1                   0.9986379               1                   1.0000000               1
+## 138                   0.9545569               1                   0.9694488               1                   1.0000000               1
+## 139                   0.9535810               1                   0.9896657               1                   1.0000000               1
+## 140                   0.7046962               1                   1.0000000               0                   1.0000000               0
+## 141                   0.8215822               1                   0.9892648               1                   1.0000000               1
+## 142                   0.8503856               1                   1.0000000               0                   1.0000000               0
+## 143                   0.7688114               1                   0.9904105               1                   1.0000000               1
+## 144                   0.9205115               1                   0.9994283               0                   0.9999504               0
+## 145                   0.9691230               1                   0.9694488               1                   1.0000000               1
+## 146                   0.9656476               1                   0.9896657               1                   1.0000000               1
+## 147                   0.8914141               1                   0.9948931               1                   1.0000000               1
+## 148                   0.6706065               1                   0.9979776               1                   1.0000000               1
+## 149                   0.6824109               1                   0.9977184               1                   1.0000000               1
+## 150                   0.6140368               1                   0.9986379               1                   1.0000000               1
+## 151                   0.7056608               0                   0.9455374               1                   0.9875392               1
+## 152                   0.5519013               0                   0.8855458               1                   0.9642090               1
+## 153                   0.6569198               0                   0.9112731               0                   0.9183174               0
+## 154                   0.6280926               1                   0.9455374               1                   0.9875392               1
+## 155                   0.5238824               1                   0.9970001               1                   1.0000000               1
+## 156                   0.6131195               1                   1.0000000               0                   1.0000000               0
+## 157                   0.5005793               1                   1.0000000               0                   1.0000000               0
+## 158                   0.5161018               1                   0.9970001               1                   1.0000000               1
+## 159                   0.5851722               1                   1.0000000               0                   1.0000000               0
+## 160                   0.5794931               1                   1.0000000               0                   1.0000000               0
+## 161                   0.6263893               1                   1.0000000               0                   1.0000000               0
+## 162                   0.6405303               1                   0.9979776               1                   1.0000000               1
+## 163                   0.6749749               1                   0.9977184               1                   1.0000000               1
+## 164                   0.5310623               1                   1.0000000               0                   1.0000000               0
+## 165                   0.5083133               1                   1.0000000               0                   1.0000000               0
+## 166                   0.5791474               1                   0.9983992               1                   1.0000000               1
+##  [ reached 'max' / getOption(&quot;max.print&quot;) -- omitted 7769 rows ]
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl com">## AFM Coefficients</span>
+<span class="hl kwd">coef</span><span class="hl std">(AFMTrainingModel)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">##                                               (Intercept)         AnonStudentIdStu_06627d0ac8f1b8dc7dc06c9bdb460c35 
+##                                              -0.058970310                                              -0.762445149 
+##         AnonStudentIdStu_06ee9e7473ee2528825b3b2c459b019d         AnonStudentIdStu_078fe5d5310189b0bfc564b50e2666e8 
+##                                               0.576012410                                              -0.478007264 
+##         AnonStudentIdStu_0cd642ec7d42ada07cf73ba5907169ed         AnonStudentIdStu_0e2c0616db10d4671c53bea1d7dde224 
+##                                              -0.491097731                                              -0.014665130 
+##         AnonStudentIdStu_0eedfd83de7a9a6ea9a1446edbf3b9df         AnonStudentIdStu_1002d9ac7640f910f340df6b908408ec 
+##                                              -0.387112674                                              -1.191570045 
+##         AnonStudentIdStu_1761a7e8ce592cce3e957985dc9702ef         AnonStudentIdStu_19e40735312b02e2487fafa0fa0a76b8 
+##                                              -0.741167437                                               0.222548569 
+##         AnonStudentIdStu_1ce82073dedb2a4eea3d371e72a1c72c         AnonStudentIdStu_1e0349c276e1acc91121487ea7e8c7f7 
+##                                              -0.519101584                                              -1.052392618 
+##         AnonStudentIdStu_22845c2d08156fd7b2f2a4cfe91bce52         AnonStudentIdStu_2bb9dfa1dea6acedb9768ce9a5c6c073 
+##                                              -0.331757912                                              -0.900947992 
+##         AnonStudentIdStu_370976c0634d03895614e7c4703306f3         AnonStudentIdStu_372676bcb7a31b63d95308695292a7bf 
+##                                              -0.718368344                                              -0.430592441 
+##         AnonStudentIdStu_3bc28dd3284c57c006d335910e2257e5         AnonStudentIdStu_3c8bed835172c6345c95e6cf606affa8 
+##                                              -0.316966558                                              -1.102271147 
+##         AnonStudentIdStu_3e9af1dcedf711c37740d4b15ab2d5b2         AnonStudentIdStu_450ffaa874f676562eca96c71dadda92 
+##                                               0.476654969                                              -0.918879840 
+##         AnonStudentIdStu_4753c3deb1a494d23d398e1f8479be48         AnonStudentIdStu_51550e559abf02e6da121ff06fa78b1a 
+##                                              -5.068737338                                              -0.424183621 
+##         AnonStudentIdStu_519f91eb2cc99b7bcd0e1025bcd3b36c         AnonStudentIdStu_5432f81eda734dd309ecb899c9086d41 
+##                                              -1.156693966                                              -0.787456071 
+##         AnonStudentIdStu_593bd66e58b7a42e85a9a1da29401638         AnonStudentIdStu_62d851082d52f75d06ca606d399ba060 
+##                                              -0.557006080                                              -0.679874978 
+##         AnonStudentIdStu_667af4e28f01d5de904c2ce6f3ae83d5         AnonStudentIdStu_691b0f73536b93913b3ce9128f9f43f1 
+##                                              -0.601916818                                              -0.270233367 
+##         AnonStudentIdStu_6a2305cfe524d98a6c83256f58238544         AnonStudentIdStu_6ab71f4a6a18431835cb57575b188c43 
+##                                              -0.572808091                                              -0.177741106 
+##         AnonStudentIdStu_6d19c5c7ebbe86242c44c7d069d612f4         AnonStudentIdStu_7213ec47c3457e784aa2580977dd6bd2 
+##                                              -0.870875713                                              -0.181076479 
+##         AnonStudentIdStu_72c31345efa3c0b72b9c82ef50b4eeb8         AnonStudentIdStu_73140ee791f9837ed2c7b1545a17e48a 
+##                                               0.665090095                                              -1.200400526 
+##         AnonStudentIdStu_749f0cd638a0e15a81bb2ed455faecb9         AnonStudentIdStu_76469b69a1b91eb654abd9c406165253 
+##                                               0.114874542                                              -0.026071836 
+##         AnonStudentIdStu_77b723b614cdda603b8eabaffcb13e3b         AnonStudentIdStu_77f6daccfa5a29768ea43a68f3e88c4a 
+##                                              -0.149557564                                               0.079602547 
+##         AnonStudentIdStu_7815d01b5e622f90f22504123ab9a3c2         AnonStudentIdStu_788c12dae341400bacf3bb3908a048bf 
+##                                               0.117512753                                              -1.498603345 
+##         AnonStudentIdStu_78de28dab07943cf3ebffb56617400fe         AnonStudentIdStu_79159b6241c6d669d5eea0a1762e916d 
+##                                              -1.795564358                                               0.131302555 
+##         AnonStudentIdStu_7ce2dd1294fd5402eac7c6ba56919c91         AnonStudentIdStu_7e2bf0c524f695ced735eabbed16b9c2 
+##                                              -1.843700800                                              -0.409843344 
+##         AnonStudentIdStu_8225f7b7838e1b5f8f2433fb71429c4f         AnonStudentIdStu_8fdc5a21f577487a7f687348ae2c9430 
+##                                              -2.110813158                                               0.610535618 
+##         AnonStudentIdStu_9047eabf8af5efccbaf0d0c965a7d53f         AnonStudentIdStu_909f4b122d9cfee9e22d762c15f57000 
+##                                              -0.504540224                                               0.083239943 
+##         AnonStudentIdStu_910a1e606bebcd5ad4c16c91a141c843         AnonStudentIdStu_94f1a98eb5048bf5d670663a28ce2134 
+##                                               0.657569458                                               0.220106371 
+##         AnonStudentIdStu_9789358042d8acbe37794f69e24f33ab         AnonStudentIdStu_a3705105be7398548f86e2ecade3c710 
+##                                               0.030293208                                              -1.100253433 
+##         AnonStudentIdStu_aaedbc0c6931eb6872829f88958167de         AnonStudentIdStu_ab0c159296c20e6403e6ab56ab8779c6 
+##                                              -0.577685357                                               0.058215374 
+##         AnonStudentIdStu_af6fb0add8a9c058454b4cf80d226479         AnonStudentIdStu_b9d88b5438bfa4eeb2324f54abd7bb65 
+##                                              -0.446549082                                               0.179364795 
+##         AnonStudentIdStu_bce7ca907095aa0fbeb226620107355d         AnonStudentIdStu_c4173487451e6d68858720d4d46626ee 
+##                                              -0.284628165                                              -1.471403242 
+##         AnonStudentIdStu_c7028a59a7ae6e8ee48ef0135ac29a07         AnonStudentIdStu_c8c6e04241ea16a28adf8d18873fecf8 
+##                                              -0.322927333                                              -1.765270967 
+##         AnonStudentIdStu_ce4fdbc129f9a0339e77837f87eb94d6         AnonStudentIdStu_cff91b03dce23517b2059b6b66cc9cbe 
+##                                              -1.177238223                                              -0.748694554 
+##         AnonStudentIdStu_d76effd7f195b8a5f775ee6d9fbcca83         AnonStudentIdStu_d9f15c92ebff8bfcd6bf35e9fdd7e246 
+##                                              -0.449695299                                              -1.743328892 
+##         AnonStudentIdStu_dd5b8847b87da55e4646430c648184cb         AnonStudentIdStu_e04eb5df958d3b2203333a6c967fa5b0 
+##                                              -0.716942725                                               0.214715165 
+##         AnonStudentIdStu_e149175288cd59a45134d123884a2f57         AnonStudentIdStu_e7c12ab0f9ae43d0aea7554ddaf5a303 
+##                                              -0.595983936                                               0.201592048 
+##         AnonStudentIdStu_ed4bc17c5af712083abdb6407f160b10         AnonStudentIdStu_f0fa17cb5bc73a3bddeebe423c8adbf5 
+##                                              -0.645065436                                              -1.166192692 
+##         AnonStudentIdStu_f5ff3250e5f78e8b496b43172b59df82         AnonStudentIdStu_f6b59972c0aea6289c81d39c80973b28 
+##                                              -0.973317438                                              -0.780717508 
+##         AnonStudentIdStu_f798dcca92b592d2d4f4b7d8e5b737a8         AnonStudentIdStu_fa7a95ff37c2e19afcc7f891a4fc161b 
+##                                              -0.645679350                                               0.414974113 
+##         AnonStudentIdStu_fcc6cab3b70885996a2444b483559157         AnonStudentIdStu_fcdcdb8ce230ef59e122ddb7fcd85f6d 
+##                                               1.433188982                                              -0.007932088 
+##         AnonStudentIdStu_fee8996b1db417827cbe4562daf0b973                                     KCModelcompDragMiddle 
+##                                              -1.450603922                                              -0.752208796 
+##                                   KCModelcompDragSmallest                                          KCModelcompFract 
+##                                              -1.374881101                                               0.948191062 
+##                                        KCModelcompNumSect                                       KCModelcompSectSize 
+##                                               0.726623430                                               1.423028943 
+##                                     KCModelequivDragFract                               KCModelequivFractEquivalent 
+##                                               0.564176872                                               1.845731767 
+##                                 KCModelequivMultiplyDenom                                   KCModelequivMultiplyNum 
+##                                               1.648645313                                               1.055063872 
+##                               KCModelequivNameDenomFract1                               KCModelequivNameDenomFract2 
+##                                               1.042132851                                               0.691426439 
+##                                 KCModelequivNameNumFract1                                 KCModelequivNameNumFract2 
+##                                               1.365402514                                               0.975930211 
+##                                     KCModelnumSectZeroDot                  KCModelrelationCompLargerSizeLargerFract 
+##                                               1.068683185                                               2.645341281 
+##                        KCModelrelationCompNumSectSizeSect                                KCModelrelationCompSameNum 
+##                                               2.065396310                                               1.722691653 
+##                        KCModelrelationCompTotalSectNumber                    KCModelrelationEquivMultiplySameNumber 
+##                                               0.946043626                                               0.077336417 
+##                   KCModelcompDragLargest:OpportunityModel                    KCModelcompDragMiddle:OpportunityModel 
+##                                               0.321984182                                               0.349611130 
+##                  KCModelcompDragSmallest:OpportunityModel                         KCModelcompFract:OpportunityModel 
+##                                               0.386674697                                              -0.031173068 
+##                       KCModelcompNumSect:OpportunityModel                      KCModelcompSectSize:OpportunityModel 
+##                                               0.097109330                                              -0.141169476 
+##                    KCModelequivDragFract:OpportunityModel              KCModelequivFractEquivalent:OpportunityModel 
+##                                               0.024441403                                               0.356250101 
+##                KCModelequivMultiplyDenom:OpportunityModel                  KCModelequivMultiplyNum:OpportunityModel 
+##                                               0.313612282                                               0.401591253 
+##              KCModelequivNameDenomFract1:OpportunityModel              KCModelequivNameDenomFract2:OpportunityModel 
+##                                               0.326596734                                               0.332900155 
+##                KCModelequivNameNumFract1:OpportunityModel                KCModelequivNameNumFract2:OpportunityModel 
+##                                               0.081443801                                               0.395778414 
+##                    KCModelnumSectZeroDot:OpportunityModel KCModelrelationCompLargerSizeLargerFract:OpportunityModel 
+##                                               0.096775025                                              -0.339903290 
+##       KCModelrelationCompNumSectSizeSect:OpportunityModel               KCModelrelationCompSameNum:OpportunityModel 
+##                                              -0.133262864                                              -0.034100607 
+##       KCModelrelationCompTotalSectNumber:OpportunityModel   KCModelrelationEquivMultiplySameNumber:OpportunityModel 
+##                                               0.196064819                                               0.712336739
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl com">## PFM Coefficients</span>
+<span class="hl kwd">coef</span><span class="hl std">(PFMTrainingModel)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">##                                             (Intercept)       AnonStudentIdStu_06627d0ac8f1b8dc7dc06c9bdb460c35 
+##                                              3.55458292                                             -0.33319448 
+##       AnonStudentIdStu_06ee9e7473ee2528825b3b2c459b019d       AnonStudentIdStu_078fe5d5310189b0bfc564b50e2666e8 
+##                                             -0.67500672                                              1.38475447 
+##       AnonStudentIdStu_0cd642ec7d42ada07cf73ba5907169ed       AnonStudentIdStu_0e2c0616db10d4671c53bea1d7dde224 
+##                                              0.37739003                                              3.34529319 
+##       AnonStudentIdStu_0eedfd83de7a9a6ea9a1446edbf3b9df       AnonStudentIdStu_1002d9ac7640f910f340df6b908408ec 
+##                                             -0.19723262                                              0.42522566 
+##       AnonStudentIdStu_1761a7e8ce592cce3e957985dc9702ef       AnonStudentIdStu_19e40735312b02e2487fafa0fa0a76b8 
+##                                              0.21636433                                              0.75515255 
+##       AnonStudentIdStu_1ce82073dedb2a4eea3d371e72a1c72c       AnonStudentIdStu_1e0349c276e1acc91121487ea7e8c7f7 
+##                                             -1.27982007                                              2.57996198 
+##       AnonStudentIdStu_22845c2d08156fd7b2f2a4cfe91bce52       AnonStudentIdStu_2bb9dfa1dea6acedb9768ce9a5c6c073 
+##                                              3.93043248                                              1.50641993 
+##       AnonStudentIdStu_370976c0634d03895614e7c4703306f3       AnonStudentIdStu_372676bcb7a31b63d95308695292a7bf 
+##                                              3.58849942                                              1.16749552 
+##       AnonStudentIdStu_3bc28dd3284c57c006d335910e2257e5       AnonStudentIdStu_3c8bed835172c6345c95e6cf606affa8 
+##                                              0.26389413                                              2.38465749 
+##       AnonStudentIdStu_3e9af1dcedf711c37740d4b15ab2d5b2       AnonStudentIdStu_450ffaa874f676562eca96c71dadda92 
+##                                             -0.05874508                                             -0.85933417 
+##       AnonStudentIdStu_4753c3deb1a494d23d398e1f8479be48       AnonStudentIdStu_51550e559abf02e6da121ff06fa78b1a 
+##                                             -8.38976349                                             -0.14222132 
+##       AnonStudentIdStu_519f91eb2cc99b7bcd0e1025bcd3b36c       AnonStudentIdStu_5432f81eda734dd309ecb899c9086d41 
+##                                              0.01073306                                              5.47271214 
+##       AnonStudentIdStu_593bd66e58b7a42e85a9a1da29401638       AnonStudentIdStu_62d851082d52f75d06ca606d399ba060 
+##                                              0.38517824                                              9.08710635 
+##       AnonStudentIdStu_667af4e28f01d5de904c2ce6f3ae83d5       AnonStudentIdStu_691b0f73536b93913b3ce9128f9f43f1 
+##                                              0.99715356                                              0.99837220 
+##       AnonStudentIdStu_6a2305cfe524d98a6c83256f58238544       AnonStudentIdStu_6ab71f4a6a18431835cb57575b188c43 
+##                                             -1.16182031                                             -1.81258108 
+##       AnonStudentIdStu_6d19c5c7ebbe86242c44c7d069d612f4       AnonStudentIdStu_7213ec47c3457e784aa2580977dd6bd2 
+##                                             -0.66188015                                              2.74174340 
+##       AnonStudentIdStu_72c31345efa3c0b72b9c82ef50b4eeb8       AnonStudentIdStu_73140ee791f9837ed2c7b1545a17e48a 
+##                                             17.67791194                                             -1.93243055 
+##       AnonStudentIdStu_749f0cd638a0e15a81bb2ed455faecb9       AnonStudentIdStu_76469b69a1b91eb654abd9c406165253 
+##                                              0.76294120                                              1.20402798 
+##       AnonStudentIdStu_77b723b614cdda603b8eabaffcb13e3b       AnonStudentIdStu_77f6daccfa5a29768ea43a68f3e88c4a 
+##                                              3.33730081                                             -0.36514208 
+##       AnonStudentIdStu_7815d01b5e622f90f22504123ab9a3c2       AnonStudentIdStu_788c12dae341400bacf3bb3908a048bf 
+##                                             -0.99782147                                             -2.19645388 
+##       AnonStudentIdStu_78de28dab07943cf3ebffb56617400fe       AnonStudentIdStu_79159b6241c6d669d5eea0a1762e916d 
+##                                             -3.20017643                                              4.43022596 
+##       AnonStudentIdStu_7ce2dd1294fd5402eac7c6ba56919c91       AnonStudentIdStu_7e2bf0c524f695ced735eabbed16b9c2 
+##                                              3.99709150                                             -0.55105726 
+##       AnonStudentIdStu_8225f7b7838e1b5f8f2433fb71429c4f       AnonStudentIdStu_8fdc5a21f577487a7f687348ae2c9430 
+##                                             -3.37924025                                             21.36321237 
+##       AnonStudentIdStu_9047eabf8af5efccbaf0d0c965a7d53f       AnonStudentIdStu_909f4b122d9cfee9e22d762c15f57000 
+##                                              0.43976372                                             16.17300530 
+##       AnonStudentIdStu_910a1e606bebcd5ad4c16c91a141c843       AnonStudentIdStu_94f1a98eb5048bf5d670663a28ce2134 
+##                                             15.10596288                                             16.32695648 
+##       AnonStudentIdStu_9789358042d8acbe37794f69e24f33ab       AnonStudentIdStu_a3705105be7398548f86e2ecade3c710 
+##                                              1.37729769                                             -0.88895134 
+##       AnonStudentIdStu_aaedbc0c6931eb6872829f88958167de       AnonStudentIdStu_ab0c159296c20e6403e6ab56ab8779c6 
+##                                             -0.12848311                                              0.03920683 
+##       AnonStudentIdStu_af6fb0add8a9c058454b4cf80d226479       AnonStudentIdStu_b9d88b5438bfa4eeb2324f54abd7bb65 
+##                                              0.99911891                                              0.91007730 
+##       AnonStudentIdStu_bce7ca907095aa0fbeb226620107355d       AnonStudentIdStu_c4173487451e6d68858720d4d46626ee 
+##                                              0.06322743                                             -2.30183783 
+##       AnonStudentIdStu_c7028a59a7ae6e8ee48ef0135ac29a07       AnonStudentIdStu_c8c6e04241ea16a28adf8d18873fecf8 
+##                                              3.29602905                                             -3.61375624 
+##       AnonStudentIdStu_ce4fdbc129f9a0339e77837f87eb94d6       AnonStudentIdStu_cff91b03dce23517b2059b6b66cc9cbe 
+##                                             -0.03005610                                             -1.78367431 
+##       AnonStudentIdStu_d76effd7f195b8a5f775ee6d9fbcca83       AnonStudentIdStu_d9f15c92ebff8bfcd6bf35e9fdd7e246 
+##                                              0.43029456                                             -1.02260611 
+##       AnonStudentIdStu_dd5b8847b87da55e4646430c648184cb       AnonStudentIdStu_e04eb5df958d3b2203333a6c967fa5b0 
+##                                             -1.61111938                                              0.43363325 
+##       AnonStudentIdStu_e149175288cd59a45134d123884a2f57       AnonStudentIdStu_e7c12ab0f9ae43d0aea7554ddaf5a303 
+##                                              0.64617725                                              4.81933859 
+##       AnonStudentIdStu_ed4bc17c5af712083abdb6407f160b10       AnonStudentIdStu_f0fa17cb5bc73a3bddeebe423c8adbf5 
+##                                             -0.84811036                                              0.23770526 
+##       AnonStudentIdStu_f5ff3250e5f78e8b496b43172b59df82       AnonStudentIdStu_f6b59972c0aea6289c81d39c80973b28 
+##                                              2.12726864                                             -2.95484764 
+##       AnonStudentIdStu_f798dcca92b592d2d4f4b7d8e5b737a8       AnonStudentIdStu_fa7a95ff37c2e19afcc7f891a4fc161b 
+##                                              0.52618561                                              8.02369097 
+##       AnonStudentIdStu_fcc6cab3b70885996a2444b483559157       AnonStudentIdStu_fcdcdb8ce230ef59e122ddb7fcd85f6d 
+##                                             17.30552248                                              0.51569553 
+##       AnonStudentIdStu_fee8996b1db417827cbe4562daf0b973                                   KCModelcompDragMiddle 
+##                                             -2.17461991                                             -0.36714897 
+##                                 KCModelcompDragSmallest                                        KCModelcompFract 
+##                                             -1.03058144                                              2.58478124 
+##                                      KCModelcompNumSect                                     KCModelcompSectSize 
+##                                              3.56337489                                              3.21425563 
+##                                   KCModelequivDragFract                             KCModelequivFractEquivalent 
+##                                             -1.17535916                                              2.26349398 
+##                               KCModelequivMultiplyDenom                                 KCModelequivMultiplyNum 
+##                                              1.34050899                                              0.23593506 
+##                             KCModelequivNameDenomFract1                             KCModelequivNameDenomFract2 
+##                                              1.30204495                                              1.41606445 
+##                               KCModelequivNameNumFract1                               KCModelequivNameNumFract2 
+##                                              0.13492220                                              1.70955331 
+##                                   KCModelnumSectZeroDot                KCModelrelationCompLargerSizeLargerFract 
+##                                             -0.42347235                                              3.37596519 
+##                      KCModelrelationCompNumSectSizeSect                              KCModelrelationCompSameNum 
+##                                              2.98008148                                              2.85920902 
+##                      KCModelrelationCompTotalSectNumber                  KCModelrelationEquivMultiplySameNumber 
+##                                              0.02851416                                              2.05065155 
+##                     KCModelcompDragLargest:CorrectModel                      KCModelcompDragMiddle:CorrectModel 
+##                                                      NA                                                      NA 
+##                    KCModelcompDragSmallest:CorrectModel                           KCModelcompFract:CorrectModel 
+##                                                      NA                                                      NA 
+##                         KCModelcompNumSect:CorrectModel                        KCModelcompSectSize:CorrectModel 
+##                                                      NA                                                      NA 
+##                      KCModelequivDragFract:CorrectModel                KCModelequivFractEquivalent:CorrectModel 
+##                                                      NA                                                      NA 
+##                  KCModelequivMultiplyDenom:CorrectModel                    KCModelequivMultiplyNum:CorrectModel 
+##                                                      NA                                                      NA 
+##                KCModelequivNameDenomFract1:CorrectModel                KCModelequivNameDenomFract2:CorrectModel 
+##                                                      NA                                                      NA 
+##                  KCModelequivNameNumFract1:CorrectModel                  KCModelequivNameNumFract2:CorrectModel 
+##                                                      NA                                                      NA 
+##                      KCModelnumSectZeroDot:CorrectModel   KCModelrelationCompLargerSizeLargerFract:CorrectModel 
+##                                                      NA                                                      NA 
+##         KCModelrelationCompNumSectSizeSect:CorrectModel                 KCModelrelationCompSameNum:CorrectModel 
+##                                                      NA                                                      NA 
+##         KCModelrelationCompTotalSectNumber:CorrectModel     KCModelrelationEquivMultiplySameNumber:CorrectModel 
+##                                                      NA                                                      NA 
+##                   KCModelcompDragLargest:IncorrectModel                    KCModelcompDragMiddle:IncorrectModel 
+##                                             -3.50596962                                             -3.17269704 
+##                  KCModelcompDragSmallest:IncorrectModel                         KCModelcompFract:IncorrectModel 
+##                                             -4.52008633                                            -39.34566436 
+##                       KCModelcompNumSect:IncorrectModel                      KCModelcompSectSize:IncorrectModel 
+##                                            -42.78073308                                            -45.00864027 
+##                    KCModelequivDragFract:IncorrectModel              KCModelequivFractEquivalent:IncorrectModel 
+##                                             -3.60838185                                            -12.95114293 
+##                KCModelequivMultiplyDenom:IncorrectModel                  KCModelequivMultiplyNum:IncorrectModel 
+##                                            -29.70822293                                             -9.54087848 
+##              KCModelequivNameDenomFract1:IncorrectModel              KCModelequivNameDenomFract2:IncorrectModel 
+##                                            -31.21978884                                            -30.96651661 
+##                KCModelequivNameNumFract1:IncorrectModel                KCModelequivNameNumFract2:IncorrectModel 
+##                                            -41.47000758                                            -30.78513173 
+##                    KCModelnumSectZeroDot:IncorrectModel KCModelrelationCompLargerSizeLargerFract:IncorrectModel 
+##                                            -33.44146023                                            -45.45793111 
+##       KCModelrelationCompNumSectSizeSect:IncorrectModel               KCModelrelationCompSameNum:IncorrectModel 
+##                                            -45.39180651                                            -44.99821844 
+##       KCModelrelationCompTotalSectNumber:IncorrectModel   KCModelrelationEquivMultiplySameNumber:IncorrectModel 
+##                                            -41.68834192                                            -41.72146824
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl com">## IFM Coefficients</span>
+<span class="hl kwd">coef</span><span class="hl std">(IFMTrainingModel)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">##                                             (Intercept)       AnonStudentIdStu_06627d0ac8f1b8dc7dc06c9bdb460c35 
+##                                              2.95533684                                              1.35253962 
+##       AnonStudentIdStu_06ee9e7473ee2528825b3b2c459b019d       AnonStudentIdStu_078fe5d5310189b0bfc564b50e2666e8 
+##                                             18.59380086                                              2.96517595 
+##       AnonStudentIdStu_0cd642ec7d42ada07cf73ba5907169ed       AnonStudentIdStu_0e2c0616db10d4671c53bea1d7dde224 
+##                                              6.50679060                                              5.77147884 
+##       AnonStudentIdStu_0eedfd83de7a9a6ea9a1446edbf3b9df       AnonStudentIdStu_1002d9ac7640f910f340df6b908408ec 
+##                                             -0.01404574                                              1.57023564 
+##       AnonStudentIdStu_1761a7e8ce592cce3e957985dc9702ef       AnonStudentIdStu_19e40735312b02e2487fafa0fa0a76b8 
+##                                              0.64003524                                              1.33568642 
+##       AnonStudentIdStu_1ce82073dedb2a4eea3d371e72a1c72c       AnonStudentIdStu_1e0349c276e1acc91121487ea7e8c7f7 
+##                                              1.48864878                                              5.01637523 
+##       AnonStudentIdStu_22845c2d08156fd7b2f2a4cfe91bce52       AnonStudentIdStu_2bb9dfa1dea6acedb9768ce9a5c6c073 
+##                                              6.93104437                                              2.61804527 
+##       AnonStudentIdStu_370976c0634d03895614e7c4703306f3       AnonStudentIdStu_372676bcb7a31b63d95308695292a7bf 
+##                                              8.07554317                                              1.82460740 
+##       AnonStudentIdStu_3bc28dd3284c57c006d335910e2257e5       AnonStudentIdStu_3c8bed835172c6345c95e6cf606affa8 
+##                                              2.51265763                                              4.85765286 
+##       AnonStudentIdStu_3e9af1dcedf711c37740d4b15ab2d5b2       AnonStudentIdStu_450ffaa874f676562eca96c71dadda92 
+##                                              1.35765084                                              4.76423140 
+##       AnonStudentIdStu_4753c3deb1a494d23d398e1f8479be48       AnonStudentIdStu_51550e559abf02e6da121ff06fa78b1a 
+##                                             -0.16798072                                              1.20129448 
+##       AnonStudentIdStu_519f91eb2cc99b7bcd0e1025bcd3b36c       AnonStudentIdStu_5432f81eda734dd309ecb899c9086d41 
+##                                              1.82111303                                              8.67501782 
+##       AnonStudentIdStu_593bd66e58b7a42e85a9a1da29401638       AnonStudentIdStu_62d851082d52f75d06ca606d399ba060 
+##                                              0.25416543                                             13.77392694 
+##       AnonStudentIdStu_667af4e28f01d5de904c2ce6f3ae83d5       AnonStudentIdStu_691b0f73536b93913b3ce9128f9f43f1 
+##                                              2.10444075                                              1.57717016 
+##       AnonStudentIdStu_6a2305cfe524d98a6c83256f58238544       AnonStudentIdStu_6ab71f4a6a18431835cb57575b188c43 
+##                                              1.05705812                                             16.14559044 
+##       AnonStudentIdStu_6d19c5c7ebbe86242c44c7d069d612f4       AnonStudentIdStu_7213ec47c3457e784aa2580977dd6bd2 
+##                                             -0.02345958                                              4.11308586 
+##       AnonStudentIdStu_72c31345efa3c0b72b9c82ef50b4eeb8       AnonStudentIdStu_73140ee791f9837ed2c7b1545a17e48a 
+##                                             20.92972033                                              5.14653445 
+##       AnonStudentIdStu_749f0cd638a0e15a81bb2ed455faecb9       AnonStudentIdStu_76469b69a1b91eb654abd9c406165253 
+##                                              1.61927592                                              4.15487053 
+##       AnonStudentIdStu_77b723b614cdda603b8eabaffcb13e3b       AnonStudentIdStu_77f6daccfa5a29768ea43a68f3e88c4a 
+##                                              4.67209183                                              0.11406096 
+##       AnonStudentIdStu_7815d01b5e622f90f22504123ab9a3c2       AnonStudentIdStu_788c12dae341400bacf3bb3908a048bf 
+##                                              0.14531328                                              0.13053724 
+##       AnonStudentIdStu_78de28dab07943cf3ebffb56617400fe       AnonStudentIdStu_79159b6241c6d669d5eea0a1762e916d 
+##                                              2.84820182                                              9.05154616 
+##       AnonStudentIdStu_7ce2dd1294fd5402eac7c6ba56919c91       AnonStudentIdStu_7e2bf0c524f695ced735eabbed16b9c2 
+##                                              7.38645464                                              2.34059043 
+##       AnonStudentIdStu_8225f7b7838e1b5f8f2433fb71429c4f       AnonStudentIdStu_8fdc5a21f577487a7f687348ae2c9430 
+##                                              4.82086123                                             27.63143010 
+##       AnonStudentIdStu_9047eabf8af5efccbaf0d0c965a7d53f       AnonStudentIdStu_909f4b122d9cfee9e22d762c15f57000 
+##                                              0.79648125                                             17.78433171 
+##       AnonStudentIdStu_910a1e606bebcd5ad4c16c91a141c843       AnonStudentIdStu_94f1a98eb5048bf5d670663a28ce2134 
+##                                             17.87581720                                             18.97726778 
+##       AnonStudentIdStu_9789358042d8acbe37794f69e24f33ab       AnonStudentIdStu_a3705105be7398548f86e2ecade3c710 
+##                                              1.81605485                                            -15.40941874 
+##       AnonStudentIdStu_aaedbc0c6931eb6872829f88958167de       AnonStudentIdStu_ab0c159296c20e6403e6ab56ab8779c6 
+##                                              6.06071935                                             17.62143176 
+##       AnonStudentIdStu_af6fb0add8a9c058454b4cf80d226479       AnonStudentIdStu_b9d88b5438bfa4eeb2324f54abd7bb65 
+##                                              2.63933055                                             19.91568761 
+##       AnonStudentIdStu_bce7ca907095aa0fbeb226620107355d       AnonStudentIdStu_c4173487451e6d68858720d4d46626ee 
+##                                              4.66363636                                              2.71216603 
+##       AnonStudentIdStu_c7028a59a7ae6e8ee48ef0135ac29a07       AnonStudentIdStu_c8c6e04241ea16a28adf8d18873fecf8 
+##                                              5.38574159                                              3.43012751 
+##       AnonStudentIdStu_ce4fdbc129f9a0339e77837f87eb94d6       AnonStudentIdStu_cff91b03dce23517b2059b6b66cc9cbe 
+##                                             -0.03536537                                             17.59130048 
+##       AnonStudentIdStu_d76effd7f195b8a5f775ee6d9fbcca83       AnonStudentIdStu_d9f15c92ebff8bfcd6bf35e9fdd7e246 
+##                                              1.16989195                                              1.42471444 
+##       AnonStudentIdStu_dd5b8847b87da55e4646430c648184cb       AnonStudentIdStu_e04eb5df958d3b2203333a6c967fa5b0 
+##                                              0.91769556                                              0.60175108 
+##       AnonStudentIdStu_e149175288cd59a45134d123884a2f57       AnonStudentIdStu_e7c12ab0f9ae43d0aea7554ddaf5a303 
+##                                              1.75965380                                              8.13985490 
+##       AnonStudentIdStu_ed4bc17c5af712083abdb6407f160b10       AnonStudentIdStu_f0fa17cb5bc73a3bddeebe423c8adbf5 
+##                                              0.24001007                                              1.30303149 
+##       AnonStudentIdStu_f5ff3250e5f78e8b496b43172b59df82       AnonStudentIdStu_f6b59972c0aea6289c81d39c80973b28 
+##                                              4.38297012                                             17.84329732 
+##       AnonStudentIdStu_f798dcca92b592d2d4f4b7d8e5b737a8       AnonStudentIdStu_fa7a95ff37c2e19afcc7f891a4fc161b 
+##                                              0.83322418                                             12.00240384 
+##       AnonStudentIdStu_fcc6cab3b70885996a2444b483559157       AnonStudentIdStu_fcdcdb8ce230ef59e122ddb7fcd85f6d 
+##                                             18.40747145                                              6.29204538 
+##       AnonStudentIdStu_fee8996b1db417827cbe4562daf0b973                                   KCModelcompDragMiddle 
+##                                              5.13621643                                              0.06475475 
+##                                 KCModelcompDragSmallest                                        KCModelcompFract 
+##                                             -0.47164229                                             32.76003132 
+##                                      KCModelcompNumSect                                     KCModelcompSectSize 
+##                                             33.56813062                                             33.26669740 
+##                                   KCModelequivDragFract                             KCModelequivFractEquivalent 
+##                                             -1.01426380                                             33.62689003 
+##                               KCModelequivMultiplyDenom                                 KCModelequivMultiplyNum 
+##                                             33.37176349                                             32.61111280 
+##                             KCModelequivNameDenomFract1                             KCModelequivNameDenomFract2 
+##                                             33.21977332                                             32.96781455 
+##                               KCModelequivNameNumFract1                               KCModelequivNameNumFract2 
+##                                             20.22029234                                             32.89102373 
+##                                   KCModelnumSectZeroDot                KCModelrelationCompLargerSizeLargerFract 
+##                                             32.03460144                                             33.73486135 
+##                      KCModelrelationCompNumSectSizeSect                              KCModelrelationCompSameNum 
+##                                             33.42631541                                             32.10754410 
+##                      KCModelrelationCompTotalSectNumber                  KCModelrelationEquivMultiplySameNumber 
+##                                             32.48211176                                             33.74490164 
+##                     KCModelcompDragLargest:CorrectModel                      KCModelcompDragMiddle:CorrectModel 
+##                                                      NA                                                      NA 
+##                    KCModelcompDragSmallest:CorrectModel                           KCModelcompFract:CorrectModel 
+##                                                      NA                                                      NA 
+##                         KCModelcompNumSect:CorrectModel                        KCModelcompSectSize:CorrectModel 
+##                                                      NA                                                      NA 
+##                      KCModelequivDragFract:CorrectModel                KCModelequivFractEquivalent:CorrectModel 
+##                                                      NA                                                      NA 
+##                  KCModelequivMultiplyDenom:CorrectModel                    KCModelequivMultiplyNum:CorrectModel 
+##                                                      NA                                                      NA 
+##                KCModelequivNameDenomFract1:CorrectModel                KCModelequivNameDenomFract2:CorrectModel 
+##                                                      NA                                                      NA 
+##                  KCModelequivNameNumFract1:CorrectModel                  KCModelequivNameNumFract2:CorrectModel 
+##                                                      NA                                                      NA 
+##                      KCModelnumSectZeroDot:CorrectModel   KCModelrelationCompLargerSizeLargerFract:CorrectModel 
+##                                                      NA                                                      NA 
+##         KCModelrelationCompNumSectSizeSect:CorrectModel                 KCModelrelationCompSameNum:CorrectModel 
+##                                                      NA                                                      NA 
+##         KCModelrelationCompTotalSectNumber:CorrectModel     KCModelrelationEquivMultiplySameNumber:CorrectModel 
+##                                                      NA                                                      NA 
+##                   KCModelcompDragLargest:IncorrectModel                    KCModelcompDragMiddle:IncorrectModel 
+##                                             -4.68198854                                             -4.24805688 
+##                  KCModelcompDragSmallest:IncorrectModel                         KCModelcompFract:IncorrectModel 
+##                                             -6.25593561                                            -75.09450516 
+##                       KCModelcompNumSect:IncorrectModel                      KCModelcompSectSize:IncorrectModel 
+##                                            -77.89659232                                            -83.46409818 
+##                    KCModelequivDragFract:IncorrectModel              KCModelequivFractEquivalent:IncorrectModel 
+##                                             -5.31549107                                            -47.84551799 
+##                KCModelequivMultiplyDenom:IncorrectModel                  KCModelequivMultiplyNum:IncorrectModel 
+##                                            -73.22939117                                            -44.97960764 
+##              KCModelequivNameDenomFract1:IncorrectModel              KCModelequivNameDenomFract2:IncorrectModel 
+##                                            -75.13895792                                            -70.94657833 
+##                KCModelequivNameNumFract1:IncorrectModel                KCModelequivNameNumFract2:IncorrectModel 
+##                                            -70.01436970                                            -74.74754633 
+##                    KCModelnumSectZeroDot:IncorrectModel KCModelrelationCompLargerSizeLargerFract:IncorrectModel 
+##                                            -73.21737338                                            -84.20294421 
+##       KCModelrelationCompNumSectSizeSect:IncorrectModel               KCModelrelationCompSameNum:IncorrectModel 
+##                                            -84.22905996                                            -82.62412462 
+##       KCModelrelationCompTotalSectNumber:IncorrectModel   KCModelrelationEquivMultiplySameNumber:IncorrectModel 
+##                                            -82.62750535                                            -78.95258416 
+##                       KCModelcompDragLargest:TellsModel                        KCModelcompDragMiddle:TellsModel 
+##                                            -41.81732407                                            -42.54913861 
+##                      KCModelcompDragSmallest:TellsModel                             KCModelcompFract:TellsModel 
+##                                            -43.18581557                                            -15.78668782 
+##                           KCModelcompNumSect:TellsModel                          KCModelcompSectSize:TellsModel 
+##                                            -15.39286797                                            -20.48205132 
+##                        KCModelequivDragFract:TellsModel                  KCModelequivFractEquivalent:TellsModel 
+##                                            -42.95005351                                            -78.75637578 
+##                    KCModelequivMultiplyDenom:TellsModel                      KCModelequivMultiplyNum:TellsModel 
+##                                            -29.59832036                                            -70.39256155 
+##                  KCModelequivNameDenomFract1:TellsModel                  KCModelequivNameDenomFract2:TellsModel 
+##                                            -21.27491588                                            -20.20772569 
+##                    KCModelequivNameNumFract1:TellsModel                    KCModelequivNameNumFract2:TellsModel 
+##                                            -62.13115294                                            -20.67998537 
+##                        KCModelnumSectZeroDot:TellsModel     KCModelrelationCompLargerSizeLargerFract:TellsModel 
+##                                            -56.28988806                                            -19.95791916 
+##           KCModelrelationCompNumSectSizeSect:TellsModel                   KCModelrelationCompSameNum:TellsModel 
+##                                            -74.74771295                                            -19.71226622 
+##           KCModelrelationCompTotalSectNumber:TellsModel       KCModelrelationEquivMultiplySameNumber:TellsModel 
+##                                            -55.40002622                                            -62.39524530
+</pre></div>
+</div></div>
+
+  <p>The R session information (including the OS info, R version and all
+    packages used):</p>
+
+<div class="chunk" id="session-info"><div class="rcode"><div class="source"><pre class="knitr r">    <span class="hl kwd">sessionInfo</span><span class="hl std">()</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## R version 4.1.2 (2021-11-01)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Linux Mint 21
+## 
+## Matrix products: default
+## BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0
+## LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=de_DE.UTF-8   
+##  [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=de_DE.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=de_DE.UTF-8 LC_IDENTIFICATION=C       
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] optimx_2022-4.30  glmnetUtils_1.1.8 glmnet_4.1-6      readxl_1.4.1      pROC_1.18.0       car_3.1-1         carData_3.0-5     plyr_1.8.8       
+##  [9] caret_6.0-93      lattice_0.20-45   forcats_0.5.2     stringr_1.4.1     dplyr_1.0.10      purrr_0.3.5       readr_2.1.3       tidyr_1.2.1      
+## [17] tibble_3.1.8      ggplot2_3.4.0     tidyverse_1.3.2   lme4_1.1-31       Matrix_1.5-3      DAAG_1.25.4       boot_1.3-28       knitr_1.41       
+## 
+## loaded via a namespace (and not attached):
+##  [1] googledrive_2.0.0    minqa_1.2.5          colorspace_2.0-3     deldir_1.0-6         ellipsis_0.3.2       class_7.3-20        
+##  [7] fs_1.5.2             rstudioapi_0.14      listenv_0.8.0        prodlim_2019.11.13   fansi_1.0.3          lubridate_1.9.0     
+## [13] xml2_1.3.3           codetools_0.2-18     splines_4.1.2        jsonlite_1.8.3       nloptr_2.0.3         broom_1.0.1         
+## [19] dbplyr_2.2.1         png_0.1-7            compiler_4.1.2       httr_1.4.4           backports_1.4.1      assertthat_0.2.1    
+## [25] gargle_1.2.1         cli_3.4.1            tools_4.1.2          gtable_0.3.1         glue_1.6.2           reshape2_1.4.4      
+## [31] Rcpp_1.0.9           cellranger_1.1.0     vctrs_0.5.0          nlme_3.1-155         iterators_1.0.14     timeDate_4021.106   
+## [37] gower_1.0.0          xfun_0.34            globals_0.16.1       rbibutils_2.2.9      rvest_1.0.3          timechange_0.1.1    
+## [43] lifecycle_1.0.3      googlesheets4_1.0.1  future_1.29.0        MASS_7.3-55          scales_1.2.1         ipred_0.9-13        
+## [49] hms_1.1.2            parallel_4.1.2       RColorBrewer_1.1-3   rpart_4.1.16         latticeExtra_0.6-30  stringi_1.7.8       
+## [55] highr_0.9            foreach_1.5.2        hardhat_1.2.0        lava_1.7.0           shape_1.4.6          Rdpack_2.4          
+## [61] rlang_1.0.6          pkgconfig_2.0.3      evaluate_0.18        recipes_1.0.3        tidyselect_1.2.0     parallelly_1.32.1   
+## [67] magrittr_2.0.3       R6_2.5.1             generics_0.1.3       DBI_1.1.3            pillar_1.8.1         haven_2.5.1         
+## [73] withr_2.5.0          survival_3.2-13      abind_1.4-5          nnet_7.3-17          future.apply_1.10.0  modelr_0.1.10       
+## [79] crayon_1.5.2         interp_1.1-3         utf8_1.2.2           tzdb_0.3.0           jpeg_0.1-9           grid_4.1.2          
+## [85] data.table_1.14.4    ModelMetrics_1.2.2.2 reprex_2.0.2         digest_0.6.30        numDeriv_2016.8-1.1  stats4_4.1.2        
+## [91] munsell_0.5.0
+</pre></div>
+<div class="source"><pre class="knitr r">    <span class="hl kwd">Sys.time</span><span class="hl std">()</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## [1] &quot;2023-01-16 01:20:23 CET&quot;
+</pre></div>
+</div></div>
+
+
+</body>
+</html>
