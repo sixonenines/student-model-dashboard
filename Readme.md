@@ -18,4 +18,4 @@ docker build . -t studentmodeldash
 ```bash
 docker run -it -p 8501:8501 studentmodeldash
 ```
-5. Open the [application] (http://localhost:8501/)
+5. Open the [application](http://localhost:8501/)
