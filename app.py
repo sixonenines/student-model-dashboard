@@ -5,9 +5,11 @@ import matplotlib.pyplot as plt
 plt.rc("font", size=14)
 import matplotlib.pyplot as plt
 import subprocess
-from PythonModelScripts import feature_engineering,getX,trainModels
-import uuid
 import streamlit_ext as ste
+import uuid
+import io
+import zipfile
+from PythonModelScripts import feature_engineering,getX,trainModels
 
 
 
@@ -45,12 +47,13 @@ if uploaded_file is not None:
     if submitted:
         pystats=[]
         rstats=[]
+        coefDic={}
         uniqueid=str(uuid.uuid4())
         datapath=f'./data/{uniqueid}.xlsx'
         writer = pd.ExcelWriter(datapath, engine='xlsxwriter')
         df.to_excel(writer,sheet_name="data")
         writer.save()
-        tab1, tab2 = st.tabs(["Python", "R"])
+        tab1, tab2,tab3,tab4 = st.tabs(["Python", "R","Comparison","Predicted Outcomes"])
         with tab1:
             df=feature_engineering(df)
             st.header("Python Implementation")
@@ -60,12 +63,16 @@ if uploaded_file is not None:
                 results=trainModels(df,modeltype,X,uniqueid)
                 stats=results[0]
                 coef=results[1]
-                stats
+                df=results[2]
+                st.dataframe(stats.style.format(thousands="",precision=2))
                 pystats.append(stats)
-                coef
+                st.dataframe(coef)
                 csv=convert_df(coef)
+                coefDic[f"PY_{modeltype}_Coefficients"]=csv
                 ste.download_button(f"Export {modeltype} Coefficients",csv,f'{modeltype}_Pycoef_{uniqueid}.csv')
-                
+            pystatsdf=dfcombiner(pystats)
+            pystatscsv=convert_df(pystatsdf)
+            ste.download_button(f"Download Python Model Stats",pystatscsv,f'Py_ModelStats_{uniqueid}.csv') 
 
         with tab2:
             st.header("R Implementation")
@@ -83,39 +90,63 @@ if uploaded_file is not None:
                     statspath=f"./output/{modeltype}_Rstats_{uniqueid}.csv"
                     coefpath=f"./output/{modeltype}_Rcoef_{uniqueid}.csv"
                     predpath=f"./output/{modeltype}_Pred_{uniqueid}.csv"
-                    stats=pd.read_csv(statspath)
+                    stats=pd.read_csv(statspath).round(2)
                     os.remove(statspath)
-                    stats
+                    st.dataframe(stats.style.format(thousands="",precision=2))
                     rstats.append(stats)
-                    coef=pd.read_csv(coefpath)
+                    coef=pd.read_csv(coefpath).round(2)
                     os.remove(coefpath)
-                    coef
+                    st.dataframe(coef.style.format(precision=2))
                     preds=pd.read_csv(predpath)
                     os.remove(predpath)
-                    df[f"R_{modeltype}predictedProbabilities"]=preds.iloc[:,0]
+                    df[f"R_{modeltype}predictedProbabilities"]=preds.iloc[:,0].round(2)
                     df[f"R_{modeltype}prediction"]=preds.iloc[:,1]
                     csv=convert_df(coef)
+                    coefDic[f"R_{modeltype}_Coefficients"]=csv
                     ste.download_button(f"Export {modeltype} Coefficients",csv,f'{modeltype}_Rcoef_{uniqueid}.csv')
                 except:
-                    st.write("Error creating R Model")                
+                    st.write("Error creating R Model")
+            rstatsdf=dfcombiner(rstats)
+            rstatscsv=convert_df(rstatsdf)
+            ste.download_button(f"Download R Model Stats",rstatscsv,f'R_ModelStats_{uniqueid}.csv')             
             os.remove(datapath)
         
         
         col1, col2, col3 = st.columns(3)
-        pystatsdf=dfcombiner(pystats)
-        rstatsdf=dfcombiner(rstats)
         allstatsdf=pd.concat([pystatsdf,rstatsdf])
-        pystatscsv=convert_df(pystatsdf)
-        rstatscsv=convert_df(rstatsdf)
         allstatscsv=convert_df(allstatsdf)
-            
-        with col1:
-            ste.download_button(f"Download Python Model Stats",pystatscsv,f'Py_ModelStats_{uniqueid}.csv')  
-        with col2:
-            ste.download_button(f"Download R Model Stats",rstatscsv,f'R_ModelStats_{uniqueid}.csv')     
-        with col3:
-            ste.download_button(f"Download Python and R Stats",allstatscsv,f'All_ModelStats_{uniqueid}.csv')      
-        with st.container():
-            df
+        print(allstatsdf)
+        with tab3:
+            st.header("Comparison")
+            ste.download_button(f"Download Python and R Stats",allstatscsv,f'All_ModelStats_{uniqueid}.csv')  
+            column_names= allstatsdf.columns[1:]
+            splitPoint=len(allstatsdf["Model_type"])//2
+            pythonModels=allstatsdf["Model_type"].iloc[:splitPoint].values
+            rModels=allstatsdf["Model_type"].iloc[splitPoint:].values
+            colors=["green","blue"]
+            for column in column_names:
+                plt.clf()
+                values= allstatsdf[column].values
+                pythonValues=values[:splitPoint]
+                rValues=values[splitPoint:]
+                plt.bar(pythonModels,pythonValues, color=colors[0])
+                plt.bar(rModels,rValues, color=colors[1])
+                #cmap=plt.get_cmap("viridis")
+                #plt.bar(allstatsdf["Model_type"],values,color=cmap(values))
+                plt.title(f"{column}")
+                plt.xlabel("Model_type")
+                plt.ylabel(column)
+                st.pyplot(plt)    
+        with tab4:
+            st.header("Predicted outcomes and predicted probabilities of each step")
+            st.dataframe(df)
             csv=convert_df(df)
             ste.download_button("Download predicted outcomes of each student model",csv,'PredictedOutcomes.csv')
+            buffer= io.BytesIO()
+            with zipfile.ZipFile(buffer,"w") as z:
+                z.writestr('PredictedOutcomes.csv',csv)
+                z.writestr('AllStats.csv',allstatscsv)
+                for model,coefcsv in coefDic.items():
+                    z.writestr(f"{model}.csv",coefcsv)
+            zip_bytes=buffer.getvalue()
+            ste.download_button("Download everything in zip",zip_bytes,"fullmodels.zip")

@@ -10,23 +10,23 @@ COPY . /app
 WORKDIR /app
 
 # installing python libraries
-RUN pip3 install streamlit
+RUN pip3 install streamlit==1.16.0
 RUN pip3 install -r requirements.txt
 
 # installing r libraries
 #RUN Rscript requirements.r
-RUN Rscript -e "install.packages('tidyverse')"
-RUN Rscript -e "install.packages('DAAG')"
-RUN Rscript -e "install.packages('boot')"
-RUN Rscript -e "install.packages('lme4')"
-RUN Rscript -e "install.packages('caret')"
-RUN Rscript -e "install.packages('plyr')"
-RUN Rscript -e "install.packages('car')"
-RUN Rscript -e "install.packages('pROC')"
-RUN Rscript -e "install.packages('readxl')"
-RUN Rscript -e "install.packages('glmnet')"
-RUN Rscript -e "install.packages('glmnetUtils')"
-RUN Rscript -e "install.packages('optimx')"
+RUN Rscript -e "install.packages('tidyverse',version='1.3.2')"
+RUN Rscript -e "install.packages('DAAG',version='1.25.4')"
+RUN Rscript -e "install.packages('boot',version='1.3.28')"
+RUN Rscript -e "install.packages('lme4',version='1.1.31')"
+RUN Rscript -e "install.packages('caret',version='6.0.93')"
+RUN Rscript -e "install.packages('plyr',version='1.8.8')"
+RUN Rscript -e "install.packages('car',version='3.1.1')"
+RUN Rscript -e "install.packages('pROC',version='1.18.0')"
+RUN Rscript -e "install.packages('readxl',version='1.4.1')"
+RUN Rscript -e "install.packages('glmnet',version='4.1.6')"
+RUN Rscript -e "install.packages('glmnetUtils',version='1.1.8')"
+RUN Rscript -e "install.packages('optimx',version='2022.4.30')"
 
 
 

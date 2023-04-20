@@ -55,6 +55,8 @@ def trainModels(df,modeltype,X,uuid):
     predictedProb=np.max(predictedProb,axis=1)
     predictionResultsdf=df
     predictionResultsdf=predictionResultsdf.assign(predProb=predictedProb,predClass=predictedClass)
+    predictionResultsdf['predClass'].astype(int)
+    predictionResultsdf['predProb']=predictionResultsdf['predProb'].round(2)
     predictionResultsdf.rename(columns={'predProb': "Py_{}_predictedProbabilities".format(modeltype), 'predClass': "Py_{}prediction".format(modeltype)}, inplace=True)
 
 
@@ -88,8 +90,9 @@ def trainModels(df,modeltype,X,uuid):
                                "RMSE","ACCcv","Precision","Recall","F1"])
     exports.loc[len(exports.index)] = ["Py_{modeltype}".format(modeltype=modeltype),AIC,AICc,BIC,K,likelihood,brierscoreloss,logloss,RMSE,ACCcv,precision,recall,f1]
 
-    coefficients=pd.DataFrame(zip(X.columns, np.transpose(TrainingModel.coef_)))
-    coefficients.columns=["Features","coef"]
 
-    
+    exports=exports.round(2)
+    coefs=np.transpose(TrainingModel.coef_).round(2)
+    coefficients=pd.DataFrame(zip(X.columns, coefs))
+    coefficients.columns=["Features","coef"]
     return exports, coefficients, predictionResultsdf
