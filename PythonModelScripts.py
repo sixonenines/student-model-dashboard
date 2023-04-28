@@ -11,6 +11,7 @@ from sklearn.model_selection import cross_val_score
 def deviance(X,y,model):
     return 2*log_loss(y, model.predict_proba(X), normalize=False)
 
+
     
 def feature_engineering(df):
     df.loc[ df['First Attempt'] == 'incorrect', 'First Attempt'] = 0
@@ -19,7 +20,7 @@ def feature_engineering(df):
     df = df[(df['First Attempt']==0) | (df['First Attempt']==1)]
 
     df=df.dropna()
-    df.insert(22,'Outcome',df['First Attempt'])
+    df.insert(loc=len(df.columns),column='Outcome',value=df['First Attempt'])
 
     df.rename(columns={'KC (Default)': 'KCModel', 'Opportunity': 'OpportunityModel'}, inplace=True)
 
