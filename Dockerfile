@@ -10,7 +10,7 @@ COPY . /app
 WORKDIR /app
 
 # installing python libraries
-RUN pip3 install streamlit==1.16.0
+RUN pip3 install streamlit==1.20.0
 RUN pip3 install -r requirements.txt
 
 # installing r libraries

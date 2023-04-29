@@ -128,7 +128,7 @@ PFMprobabilities <- PFMTrainingModel %>% predict(mydata, type = "response")
 PFMpredictedProbabilities <- ifelse(PFMprobabilities>0.5, PFMprobabilities, 1-PFMprobabilities)
 PFMprediction <- ifelse(PFMprobabilities >0.5,1,0)
 
-ModelPredictions <- data.frame(R_PFMpredictedProbabilities=PFMpredictedProbabilities,R_PFMprediction=PFMprediction)
+ModelPredictions <- data.frame(Row=mydata$`Row`,R_PFMpredictedProbabilities=PFMpredictedProbabilities,R_PFMprediction=PFMprediction)
 
 
 #IFM_form <- Outcome ~ AnonStudentId +KCModel + KCModel:(CorrectModel + IncorrectModel + TellsModel)

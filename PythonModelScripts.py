@@ -32,6 +32,7 @@ def feature_engineering(df):
 def getX(df,modeltype):
     if modeltype=="AFM":
         y, X = dmatrices('Outcome ~ AnonStudentId + KCModel+ KCModel:OpportunityModel', df,return_type="dataframe")
+        #y, X = dmatrices('Outcome ~ AnonStudentId + KCModel+ KCModel:OpportunityModel', df,return_type="dataframe")
     elif modeltype=="PFM":
         y, X = dmatrices('Outcome ~ AnonStudentId + KCModel+ KCModel:(CorrectModel+IncorrectModel)', df,return_type="dataframe")
     elif modeltype=="IFM":
@@ -43,7 +44,7 @@ def trainModels(df,modeltype,X,uuid):
     y = df['Outcome']
     y= y.astype('int')
 
-    TrainingModel=LogisticRegression(max_iter=1000)
+    TrainingModel=LogisticRegression(max_iter=1000,penalty='none')  ####### USUALLY L2
     TrainingModel=TrainingModel.fit(X,y)
 
     k=10
@@ -54,17 +55,17 @@ def trainModels(df,modeltype,X,uuid):
     predictedProb=TrainingModel.predict_proba(X)
     predictedClass=TrainingModel.predict(X)
     predictedProb=np.max(predictedProb,axis=1)
-    predictionResultsdf=df
-    predictionResultsdf=predictionResultsdf.assign(predProb=predictedProb,predClass=predictedClass)
+    predictionResultsdf=pd.DataFrame(df["Row"].copy())
+    predictionResultsdf['predClass']=predictedClass
+    predictionResultsdf['predProb']=predictedProb
+   # predictionResultsdf=predictionResultsdf.assign(predProb=predictedProb,predClass=predictedClass)
     predictionResultsdf['predClass'].astype(int)
     predictionResultsdf['predProb']=predictionResultsdf['predProb'].round(2)
-    predictionResultsdf.rename(columns={'predProb': "Py_{}_predictedProbabilities".format(modeltype), 'predClass': "Py_{}prediction".format(modeltype)}, inplace=True)
-
+    predictionResultsdf.rename(columns={'predProb': "Py_{}predictedProbabilities".format(modeltype), 'predClass': "Py_{}prediction".format(modeltype)}, inplace=True)
 
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=0)
-    TrainTestSplitModel=LogisticRegression(max_iter=1000)
-    TrainTestSplitModel=TrainTestSplitModel.fit(X_train,y_train)
-
+    TrainTestSplitModel=LogisticRegression(max_iter=1000,penalty='none')   ######  USUALLY L2
+    TrainTestSplitModel.fit(X_train,y_train)
 
     y_pred=TrainTestSplitModel.predict(X_test)
     RMSE=np.sqrt(np.mean((y_test-y_pred)**2))
