@@ -142,7 +142,7 @@ else:
 with open('./data/example_template.xlsx', 'rb') as xlsx_template:
     excel_bytes = xlsx_template.read()
 
-st.download_button("Example xlxs file",data=excel_bytes,file_name="example_template.xlsx",mime="text/csv")
+st.download_button("Example xlsx file",data=excel_bytes,file_name="example_template.xlsx",mime="text/csv")
 with st.expander("XLSX structure"):
     st.write("""
         \nAnonStudentId: text
