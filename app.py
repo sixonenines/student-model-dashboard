@@ -202,18 +202,24 @@ if uploaded_file is not None:
                 all_metrics= st.session_state.allstatsdf.drop('Model_type',axis=1).columns
                 with st.expander("Metric explanation"):
                     st.write("""\n
-                    \nPrecision: Proportion of true positives to the amount of positive predictions
-                    \nRecall: Proportion of true positives to the amount of positive outcomes 
-                    \nF1: Harmonic mean of precision and recall
+                    \nPrecision: Proportion of true positives to the amount of positive predictions. Should be intrepreted as a probability,
+                     where 1 is the highest value which means that the model is not making any false positive predictions.
+                    \nRecall: Proportion of true positives to the amount of positive outcomes. Should be interpreted as a probability,
+                     where 1 is the highest value which means that the model has no false negatives
+                    \nF1: Harmonic mean of precision and recall. Useful in cases where you want to take both the amount of false positives and false negatives
+                      into account. F1 value ranges between 0 and 1, where a lower value means that the model is making too many
+                      false positives or false negative predictions.
                     \nRoot mean squared error: Measures the average distance between predicted values and the actual values
-                    \nAccuracy with cross-validation: Useful to evaluate the models ability to generalize to new data
+                    \nAccuracy with cross-validation: Useful to evaluate the models ability to generalize to new data. The value ranges between 0 and 1, where 1 means
+                      that the model was able to correctly classify all data entries.
                     \nLikelihood: Measure of how well a model fits the data
                     \nLog-likelihood: Natural logarithm of the likelihood function
-                    \nNumber of Parameters, number of p
+                    \nNumParameters: Number of Parameters the model has
                     \nAIC (Akaike Information Criterion): Useful for comparing goodness of fit between different models, the lower the better 
                     \nAICc (Corrected Akaike Information Criterion): Like AIC, but with a correction term that accounts for the number of parameters in relation to the sample size
-                    \nBIC (Bayesian Information Criterion): Like AIC, but with a stronger penalty on overly complex models
-                    \nBrier Score Loss: Measures the accuracy of probabilistic predictions
+                    \nBIC (Bayesian Information Criterion): Like AIC, but with a stronger penaly on overly complex models
+                    \nBrier Score Loss: Measures the accuracy of probabilistic predictions. A low score means that the model is able to predict
+                      the correct outcome with high confidence.
                     """)
                 st.session_state["chosen_metric"]=st.multiselect("Which statistic do you want to compare?",all_metrics,default=all_metrics[0])
                 create_plot(st.session_state.allstatsdf,st.session_state["chosen_metric"])
@@ -221,8 +227,8 @@ if uploaded_file is not None:
             if not st.session_state.error:
                 predDf=dfappender(cleanedDf,st.session_state.extendedDfList)
                 st.write("""Here is the predicted Outcome (1 or 0) of each data entry used
-                        to build the model and the predicted probability
-                            for that predicted Outcome""")
+                        to build the model and the confidence (predicted probability)
+                            in that predicted Outcome""")
                 st.write(predDf)
                 buffer=io.BytesIO()
                 with zipfile.ZipFile(buffer,"w") as z:
