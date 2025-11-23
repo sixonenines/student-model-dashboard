@@ -38,7 +38,7 @@ mydata <- read_excel(inputfilelocation)
 #exportdf <- mydata
 
 
-#write.csv(filelocation, "./Bobro.csv", row.names=FALSE)
+#write.csv(filelocation, "", row.names=FALSE)
 
 
 

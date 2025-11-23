@@ -1,4 +1,7 @@
 import os
+from rpy2 import robjects
+from rpy2.robjects import r, globalenv, default_converter, pandas2ri
+from rpy2.robjects.conversion import localconverter
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt 
@@ -9,7 +12,7 @@ import uuid
 import io
 import zipfile
 from PythonModelScripts import feature_engineering,getX,trainModels
-
+import traceback
 
 if "submit_state" not in st.session_state:
             st.session_state.submit_state=False
@@ -52,10 +55,8 @@ def read_excel(uploaded_file):
 
 @st.cache_data
 def save_excel(df):
-    st.session_state.datapath=f'./data/{st.session_state.uniqueid}.xlsx'
-    writer = pd.ExcelWriter(st.session_state.datapath, engine='xlsxwriter')
-    df.to_excel(writer,sheet_name="data")
-    writer.save()
+    st.session_state.datapath=f'./data/{st.session_state.uniqueid}.xlsx' #Trying to fix this
+    df.to_excel(st.session_state.datapath)
     return 1
 @st.cache_data
 def createPythonModels(df,modeltype,uniqueid):
@@ -142,7 +143,7 @@ else:
 with open('./data/example_template.xlsx', 'rb') as xlsx_template:
     excel_bytes = xlsx_template.read()
 
-st.download_button("Example xlsx file",data=excel_bytes,file_name="example_template.xlsx",mime="text/csv")
+st.download_button("Example xlsx file taken from DataShop @CMU",data=excel_bytes,file_name="example_template.xlsx",mime="text/csv")
 with st.expander("XLSX structure"):
     st.write("""
         \nAnonStudentId: text
@@ -164,11 +165,8 @@ if uploaded_file is not None:
     if submitted or st.session_state.submit_state:
         st.session_state.submit_state=True
         if st.session_state.datapath==False:
-            st.session_state.datapath=f'./data/{st.session_state.uniqueid}.xlsx'
-            writer = pd.ExcelWriter(st.session_state.datapath, engine='xlsxwriter')
-            df.to_excel(writer,sheet_name="data")
-            writer.save()
-
+            st.session_state.datapath=f'./data/{st.session_state.uniqueid}.xlsx' # Trying to fix this
+            df.to_excel(st.session_state.datapath)
         tab1, tab2, tab3,tab4 = st.tabs(["Python", "R","Evaluation Metrics","Predicted Outcomes and Downloads"])
         with tab1:
             cleanedDf=feature_engineering(df)
@@ -189,7 +187,8 @@ if uploaded_file is not None:
                     results=createRModels(modeltype,st.session_state.uniqueid)
                     st.dataframe(results["stats"].style.format(thousands="",precision=2))    
                     st.dataframe(results["coef"].style.format(precision=2))
-                except:
+                except Exception as e:
+                    st.error(e)
                     st.session_state.error="True"
                     st.error('Error creating R models, might need more input data', icon="🚨")       
         with tab3:

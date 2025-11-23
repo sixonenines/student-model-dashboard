@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from patsy import dmatrices
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import log_loss
@@ -44,7 +45,7 @@ def trainModels(df,modeltype,X,uuid):
     y = df['Outcome']
     y= y.astype('int')
 
-    TrainingModel=LogisticRegression(max_iter=1000,penalty='none')  ####### USUALLY L2
+    TrainingModel=LogisticRegression(max_iter=1000,penalty=None)  ####### USUALLY L2
     TrainingModel=TrainingModel.fit(X,y)
 
     k=10
@@ -64,7 +65,7 @@ def trainModels(df,modeltype,X,uuid):
     predictionResultsdf.rename(columns={'predProb': "Py_{}predictedProbabilities".format(modeltype), 'predClass': "Py_{}prediction".format(modeltype)}, inplace=True)
 
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=0)
-    TrainTestSplitModel=LogisticRegression(max_iter=1000,penalty='none')   ######  USUALLY L2
+    TrainTestSplitModel=LogisticRegression(max_iter=1000,penalty=None)   ######  USUALLY L2
     TrainTestSplitModel.fit(X_train,y_train)
 
     y_pred=TrainTestSplitModel.predict(X_test)
