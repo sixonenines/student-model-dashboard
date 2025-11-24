@@ -1,7 +1,4 @@
 import os
-from rpy2 import robjects
-from rpy2.robjects import r, globalenv, default_converter, pandas2ri
-from rpy2.robjects.conversion import localconverter
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt 
