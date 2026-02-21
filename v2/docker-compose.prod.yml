@@ -1,0 +1,72 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    networks:
+      - nginx-proxy
+    mem_limit: 128m
+    depends_on:
+      python-backend:
+        condition: service_healthy
+      r-backend:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+
+  python-backend:
+    build: ./python-backend
+    expose:
+      - "8000"
+    networks:
+      - nginx-proxy
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  r-backend:
+    build: ./r-backend
+    expose:
+      - "8001"
+    networks:
+      - nginx-proxy
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "Rscript", "-e", "tryCatch(readLines(url('http://localhost:8001/api/health')), error=function(e) quit(status=1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+
+networks:
+  nginx-proxy:
+    external: true
