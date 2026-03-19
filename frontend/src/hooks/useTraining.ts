@@ -49,5 +49,9 @@ export function useTraining() {
     []
   );
 
-  return { ...state, train };
+  const reset = useCallback(() => {
+    setState({ loading: false, error: null, pythonResults: null, rResults: null });
+  }, []);
+
+  return { ...state, train, reset };
 }

@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile.prod
     networks:
       - nginx-proxy
+      - app-network
     mem_limit: 128m
     depends_on:
       python-backend:
@@ -30,7 +31,7 @@ services:
     expose:
       - "8000"
     networks:
-      - nginx-proxy
+      - app-network
     mem_limit: 2g
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
@@ -51,7 +52,7 @@ services:
     expose:
       - "8001"
     networks:
-      - nginx-proxy
+      - app-network
     mem_limit: 2g
     healthcheck:
       test: ["CMD", "Rscript", "-e", "tryCatch(readLines(url('http://localhost:8001/api/health')), error=function(e) quit(status=1))"]
@@ -68,5 +69,7 @@ services:
       - /tmp
 
 networks:
+  app-network:
+    driver: bridge
   nginx-proxy:
     external: true

@@ -1,9 +1,0 @@
-streamlit==1.51.0
-scikit-learn==1.7.2
-pandas==2.3.3
-patsy==1.0.2
-numpy==2.3.5
-matplotlib==3.10.7
-streamlit-ext==0.1.19
-openpyxl==3.1.5
-xlsxwriter==3.2.9
