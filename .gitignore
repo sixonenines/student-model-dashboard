@@ -22,8 +22,8 @@ venv/
 node_modules/
 
 # Build output
-v2/frontend/dist/
-v2/frontend/tsconfig.tsbuildinfo
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
 
 # IDE
 .idea/
