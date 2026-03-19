@@ -1,2 +1,7 @@
 # Mark generated/vendored files so GitHub Linguist excludes them from language stats
 frontend/package-lock.json linguist-generated
+frontend/tsconfig.json linguist-generated
+frontend/tsconfig.tsbuildinfo linguist-generated
+frontend/vite.config.ts linguist-generated
+frontend/postcss.config.js linguist-generated
+frontend/tailwind.config.js linguist-generated
