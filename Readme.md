@@ -21,8 +21,8 @@ The application runs as three Docker containers:
 | Service | Tech | Description |
 |---------|------|-------------|
 | **Frontend** | React, TypeScript, Vite, Tailwind CSS | Upload data, configure models, view results |
-| **Python Backend** | FastAPI, scikit-learn, patsy | Trains all Python-based IRT models in a single request |
-| **R Backend** | Plumber, glm, DAAG | Trains R-based IRT models (one model per request) |
+| **Python Backend** | FastAPI, scikit-learn, patsy | Trains Python-based IRT models |
+| **R Backend** | Plumber, glm, DAAG | Trains R-based IRT models |
 
 The frontend is served via **nginx**, which also reverse-proxies API requests to the backends. All processing happens in-browser or server-side — no data leaves the deployment.
 
